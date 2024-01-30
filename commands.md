@@ -59,6 +59,8 @@ sudo rm migrate.list
 Создание миграционного репозитория
 ```
 migrate create -ext sql -dir migrations ProfilesCreationMigration
+migrate create -ext sql -dir migrations ProfileComplaintsCreationMigration
+migrate create -ext sql -dir migrations ProfileTelegramCreationMigration
 migrate create -ext sql -dir migrations ProfileImagesCreationMigration
 ```
 
@@ -74,7 +76,7 @@ migrate -path migrations -database "postgres://localhost:5432/tgbot?sslmode=disa
 
 Если ошибка Dirty database version 1. Fix and force version
 ```
-migrate create -ext sql -dir migrations ProfilesCreationMigration force 20240127080026
+migrate create -ext sql -dir migrations ProfilesCreationMigration force 20240129050815
 ```
 
 Fiber
@@ -87,4 +89,10 @@ CORS
 https://github.com/gorilla/handlers
 ```
 go get -u github.com/gorilla/handlers
+```
+
+Telegram Bot API
+https://github.com/go-telegram-bot-api/telegram-bot-api
+```
+go get -u github.com/go-telegram-bot-api/telegram-bot-api/v5
 ```

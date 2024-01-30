@@ -19,25 +19,40 @@ func NewHandlerProfile(l logger.Logger, uc *profile.UseCaseProfile) *HandlerProf
 	return &HandlerProfile{logger: l, uc: uc}
 }
 
-func (h *HandlerProfile) CreateProfileHandler() fiber.Handler {
+func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("POST /api/v1/profile/create")
-		req := profileUseCase.CreateRequestProfile{}
+		h.logger.Info("POST /api/v1/profile/add")
+		req := profileUseCase.AddRequestProfile{}
 		if err := ctf.BodyParser(&req); err != nil {
 			h.logger.Debug(
-				"error func CreateProfileHandler,"+
+				"error func AddProfileHandler,"+
 					" method BodyParser by path internal/handler/profile/profile.go",
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		response, err := h.uc.Create(ctf.Context(), &req)
+		response, err := h.uc.Add(ctf, &req)
 		if err != nil {
 			h.logger.Debug(
-				"error func CreateProfileHandler, method Create by path"+
+				"error func AddProfileHandler, method Add by path"+
 					" internal/handler/profile/profile.go",
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		return r.WrapCreated(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) GetProfileHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("GET /api/v1/profile/:id")
+		response, err := h.uc.FindById(ctf)
+		if err != nil {
+			h.logger.Debug(
+				"error func GetProfileHandler, method FindById by path"+
+					" internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapOk(ctf, response)
 	}
 }
