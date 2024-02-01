@@ -7,6 +7,7 @@ import (
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
+	"os"
 	"strconv"
 	"time"
 )
@@ -34,8 +35,15 @@ func NewUseCaseProfile(l logger.Logger, pr profileRepo) *UseCaseProfile {
 }
 
 func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.RequestAddProfile) (*profile.Profile, error) {
-	filePath := "./static/uploads/profile/images/defaultImage.jpg"
-	directoryPath := fmt.Sprintf("./static/uploads/profile/images")
+	filePath := fmt.Sprintf("./static/uploads/profile/%s/images/defaultImage.jpg", r.UserName)
+	directoryPath := fmt.Sprintf("./static/uploads/profile/%s/images", r.UserName)
+	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(directoryPath, 0755); err != nil {
+			u.logger.Debug("error func Add, method MkdirAll by path internal/useCase/profile/profile.go",
+				zap.Error(err))
+			return nil, err
+		}
+	}
 	form, err := ctf.MultipartForm()
 	if err != nil {
 		u.logger.Debug("error func Add, method MultipartForm by path internal/useCase/profile/profile.go",

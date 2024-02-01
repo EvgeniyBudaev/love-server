@@ -54,7 +54,7 @@ type ContentListProfile struct {
 
 type ResponseListProfile struct {
 	*pagination.Pagination
-	Content []*ContentListProfile
+	Content []*ContentListProfile `json:"content"`
 }
 
 type ComplaintProfile struct {
