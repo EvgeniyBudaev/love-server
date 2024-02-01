@@ -4,7 +4,7 @@ CREATE TABLE profiles
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     display_name VARCHAR NOT NULL,
-    age INTEGER NOT NULL,
+    birthday TIMESTAMP NOT NULL,
     gender gender_enum NOT NULL,
     location VARCHAR NOT NULL,
     description VARCHAR NOT NULL,

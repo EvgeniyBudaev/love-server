@@ -22,7 +22,7 @@ func NewHandlerProfile(l logger.Logger, uc *profile.UseCaseProfile) *HandlerProf
 func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		h.logger.Info("POST /api/v1/profile/add")
-		req := profileUseCase.AddRequestProfile{}
+		req := profileUseCase.RequestAddProfile{}
 		if err := ctf.BodyParser(&req); err != nil {
 			h.logger.Debug(
 				"error func AddProfileHandler,"+
@@ -39,6 +39,21 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		return r.WrapCreated(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("GET /api/v1/profile/list")
+		response, err := h.uc.SelectList(ctf)
+		if err != nil {
+			h.logger.Debug(
+				"error func GetProfileListHandler, method SelectList by path"+
+					" internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapOk(ctf, response)
 	}
 }
 

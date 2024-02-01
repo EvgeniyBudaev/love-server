@@ -69,6 +69,7 @@ func (app *App) StartHTTPServer() error {
 	ph := profile.NewHandlerProfile(app.Logger, puc)
 	grp := app.fiber.Group(prefix)
 	grp.Post("/profile/add", ph.AddProfileHandler())
+	grp.Get("/profile/list", ph.GetProfileListHandler())
 	grp.Get("/profile/:id", ph.GetProfileHandler())
 	if err := app.fiber.Listen(app.config.Port); err != nil {
 		app.Logger.Fatal("error func StartHTTPServer, method Listen by path internal/app/http.go", zap.Error(err))

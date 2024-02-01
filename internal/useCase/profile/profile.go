@@ -13,6 +13,7 @@ import (
 
 type profileRepo interface {
 	Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
+	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, p *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
@@ -32,7 +33,7 @@ func NewUseCaseProfile(l logger.Logger, pr profileRepo) *UseCaseProfile {
 	}
 }
 
-func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.AddRequestProfile) (*profile.Profile, error) {
+func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.RequestAddProfile) (*profile.Profile, error) {
 	filePath := "./static/uploads/profile/images/defaultImage.jpg"
 	directoryPath := fmt.Sprintf("./static/uploads/profile/images")
 	form, err := ctf.MultipartForm()
@@ -67,7 +68,7 @@ func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.AddRequestProfile) (*pro
 	}
 	profileDto := &profile.Profile{
 		DisplayName: r.DisplayName,
-		Age:         r.Age,
+		Birthday:    r.Birthday,
 		Gender:      r.Gender,
 		Location:    r.Location,
 		Description: r.Description,
@@ -105,14 +106,28 @@ func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.AddRequestProfile) (*pro
 			return nil, err
 		}
 	}
+	telegramID, err := strconv.ParseUint(r.TelegramID, 10, 64)
+	if err != nil {
+		u.logger.Debug(
+			"error func GetRoomListByProfile, method ParseUint roomIdStr by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	allowsWriteToPm, err := strconv.ParseBool(r.AllowsWriteToPm)
+	if err != nil {
+		u.logger.Debug(
+			"error func GetRoomListByProfile, method ParseBool roomIdStr by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
 	telegramDto := &profile.TelegramProfile{
 		ProfileID:       newProfile.ID,
-		TelegramID:      r.TelegramID,
+		TelegramID:      telegramID,
 		UserName:        r.UserName,
 		Firstname:       r.Firstname,
 		Lastname:        r.Lastname,
 		LanguageCode:    r.LanguageCode,
-		AllowsWriteToPm: r.AllowsWriteToPm,
+		AllowsWriteToPm: allowsWriteToPm,
 		QueryID:         r.QueryID,
 	}
 	t, err := u.profileRepo.AddTelegram(ctf.Context(), telegramDto)
@@ -134,7 +149,7 @@ func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.AddRequestProfile) (*pro
 	response := &profile.Profile{
 		ID:          p.ID,
 		DisplayName: p.DisplayName,
-		Age:         p.Age,
+		Birthday:    p.Birthday,
 		Gender:      p.Gender,
 		Location:    p.Location,
 		Description: p.Description,
@@ -144,8 +159,24 @@ func (u *UseCaseProfile) Add(ctf *fiber.Ctx, r *profile.AddRequestProfile) (*pro
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 		LastOnline:  p.LastOnline,
-		Telegram:    t,
 		Images:      i,
+		Telegram:    t,
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) SelectList(ctf *fiber.Ctx) (*profile.ResponseListProfile, error) {
+	var params profile.QueryParamsProfileList
+	if err := ctf.QueryParser(&params); err != nil {
+		u.logger.Debug("error func SelectList, method QueryParser by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	response, err := u.profileRepo.SelectList(ctf.Context(), &params)
+	if err != nil {
+		u.logger.Debug("error func SelectList, method SelectList by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
 	}
 	return response, nil
 }
@@ -179,7 +210,7 @@ func (u *UseCaseProfile) FindById(ctf *fiber.Ctx) (*profile.Profile, error) {
 	response := &profile.Profile{
 		ID:          p.ID,
 		DisplayName: p.DisplayName,
-		Age:         p.Age,
+		Birthday:    p.Birthday,
 		Gender:      p.Gender,
 		Location:    p.Location,
 		Description: p.Description,
@@ -189,8 +220,8 @@ func (u *UseCaseProfile) FindById(ctf *fiber.Ctx) (*profile.Profile, error) {
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 		LastOnline:  p.LastOnline,
-		Telegram:    t,
 		Images:      i,
+		Telegram:    t,
 	}
 	return response, nil
 }
