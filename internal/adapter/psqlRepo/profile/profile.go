@@ -23,11 +23,13 @@ func NewRepositoryProfile(logger logger.Logger, db *sql.DB) *RepositoryProfile {
 }
 
 func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
-	query := "INSERT INTO profiles (display_name, birthday, gender, location, description, is_deleted," +
-		" is_blocked, is_premium, created_at, updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9," +
-		" $10, $11) RETURNING id"
-	err := r.db.QueryRowContext(ctx, query, p.DisplayName, p.Birthday, p.Gender, p.Location, p.Description, p.IsDeleted,
-		p.IsBlocked, p.IsPremium, p.CreatedAt, p.UpdatedAt, p.LastOnline).Scan(&p.ID)
+	query := "INSERT INTO profiles (display_name, birthday, gender, search_gender, location, description, height," +
+		" weight, looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at," +
+		" updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15," +
+		" $16, $17) RETURNING id"
+	err := r.db.QueryRowContext(ctx, query, p.DisplayName, p.Birthday, p.Gender, p.SearchGender, p.Location,
+		p.Description, p.Height, p.Weight, p.LookingFor, p.IsDeleted, p.IsBlocked, p.IsPremium, p.IsShowDistance,
+		p.IsInvisible, p.CreatedAt, p.UpdatedAt, p.LastOnline).Scan(&p.ID)
 	if err != nil {
 		r.logger.Debug(
 			"error func Add, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
@@ -39,8 +41,9 @@ func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profi
 
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
-	query := "SELECT id, display_name, birthday, gender, location, description, is_deleted, is_blocked, is_premium," +
-		" created_at, updated_at, last_online FROM profiles WHERE is_deleted = false"
+	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
+		" looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at," +
+		" last_online FROM profiles WHERE is_deleted = false"
 	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted = false"
 	limit := qp.Limit
 	page := qp.Page
@@ -66,8 +69,9 @@ func (r *RepositoryProfile) SelectList(
 	list := make([]*profile.ContentListProfile, 0)
 	for rows.Next() {
 		p := profile.Profile{}
-		err := rows.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location, &p.Description, &p.IsDeleted,
-			&p.IsBlocked, &p.IsPremium, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+		err := rows.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
+			&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
+			&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 		if err != nil {
 			r.logger.Debug("error func SelectList, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 				zap.Error(err))
@@ -102,8 +106,8 @@ func (r *RepositoryProfile) SelectList(
 
 func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT id, display_name, birthday, gender, location, description, is_deleted, is_blocked, is_premium,
-       created_at, updated_at, last_online
+	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
+       looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at, last_online
 			  FROM profiles
 			  WHERE id = $1`
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -114,8 +118,9 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 			zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location, &p.Description, &p.IsDeleted,
-		&p.IsBlocked, &p.IsPremium, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
+		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
+		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
 		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))

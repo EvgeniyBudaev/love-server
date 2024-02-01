@@ -76,19 +76,41 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			imagesFilePath = append(imagesFilePath, filePath)
 			imagesProfile = append(imagesProfile, &image)
 		}
+		heightUint64, err := strconv.ParseUint(req.Height, 10, 8)
+		if err != nil {
+			h.logger.Debug(
+				"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		height := uint8(heightUint64)
+		weightUint64, err := strconv.ParseUint(req.Weight, 10, 8)
+		if err != nil {
+			h.logger.Debug(
+				"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		weight := uint8(weightUint64)
 		profileDto := &profile.Profile{
-			DisplayName: req.DisplayName,
-			Birthday:    req.Birthday,
-			Gender:      req.Gender,
-			Location:    req.Location,
-			Description: req.Description,
-			IsDeleted:   false,
-			IsBlocked:   false,
-			IsPremium:   false,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-			LastOnline:  time.Now(),
-			Images:      imagesProfile,
+			DisplayName:    req.DisplayName,
+			Birthday:       req.Birthday,
+			Gender:         req.Gender,
+			SearchGender:   req.SearchGender,
+			Location:       req.Location,
+			Description:    req.Description,
+			Height:         height,
+			Weight:         weight,
+			LookingFor:     req.LookingFor,
+			IsDeleted:      false,
+			IsBlocked:      false,
+			IsPremium:      false,
+			IsShowDistance: true,
+			IsInvisible:    false,
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
+			LastOnline:     time.Now(),
+			Images:         imagesProfile,
 		}
 		newProfile, err := h.uc.Add(ctf.Context(), profileDto)
 		for _, i := range profileDto.Images {
@@ -162,20 +184,26 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		response := &profile.Profile{
-			ID:          p.ID,
-			DisplayName: p.DisplayName,
-			Birthday:    p.Birthday,
-			Gender:      p.Gender,
-			Location:    p.Location,
-			Description: p.Description,
-			IsDeleted:   p.IsDeleted,
-			IsBlocked:   p.IsBlocked,
-			IsPremium:   p.IsPremium,
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
-			LastOnline:  p.LastOnline,
-			Images:      i,
-			Telegram:    t,
+			ID:             p.ID,
+			DisplayName:    p.DisplayName,
+			Birthday:       p.Birthday,
+			Gender:         p.Gender,
+			SearchGender:   p.SearchGender,
+			Location:       p.Location,
+			Description:    p.Description,
+			Height:         p.Height,
+			Weight:         p.Weight,
+			LookingFor:     p.LookingFor,
+			IsDeleted:      p.IsDeleted,
+			IsBlocked:      p.IsBlocked,
+			IsPremium:      p.IsPremium,
+			IsShowDistance: p.IsShowDistance,
+			IsInvisible:    p.IsInvisible,
+			CreatedAt:      p.CreatedAt,
+			UpdatedAt:      p.UpdatedAt,
+			LastOnline:     p.LastOnline,
+			Images:         i,
+			Telegram:       t,
 		}
 		return r.WrapCreated(ctf, response)
 	}
@@ -227,20 +255,26 @@ func (h *HandlerProfile) GetProfileHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		response := &profile.Profile{
-			ID:          p.ID,
-			DisplayName: p.DisplayName,
-			Birthday:    p.Birthday,
-			Gender:      p.Gender,
-			Location:    p.Location,
-			Description: p.Description,
-			IsDeleted:   p.IsDeleted,
-			IsBlocked:   p.IsBlocked,
-			IsPremium:   p.IsPremium,
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
-			LastOnline:  p.LastOnline,
-			Images:      i,
-			Telegram:    t,
+			ID:             p.ID,
+			DisplayName:    p.DisplayName,
+			Birthday:       p.Birthday,
+			Gender:         p.Gender,
+			SearchGender:   p.SearchGender,
+			Location:       p.Location,
+			Description:    p.Description,
+			Height:         p.Height,
+			Weight:         p.Weight,
+			LookingFor:     p.LookingFor,
+			IsDeleted:      p.IsDeleted,
+			IsBlocked:      p.IsBlocked,
+			IsPremium:      p.IsPremium,
+			IsShowDistance: p.IsShowDistance,
+			IsInvisible:    p.IsInvisible,
+			CreatedAt:      p.CreatedAt,
+			UpdatedAt:      p.UpdatedAt,
+			LastOnline:     p.LastOnline,
+			Images:         i,
+			Telegram:       t,
 		}
 		return r.WrapOk(ctf, response)
 	}
