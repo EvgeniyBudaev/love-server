@@ -153,7 +153,7 @@ func (r *RepositoryProfile) FindTelegramById(ctx context.Context, profileID uint
 			zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.ProfileID, &p.TelegramID, &p.Firstname, &p.Lastname, &p.UserName, &p.LanguageCode,
+	err := row.Scan(&p.ID, &p.ProfileID, &p.TelegramID, &p.UserName, &p.Firstname, &p.Lastname, &p.LanguageCode,
 		&p.AllowsWriteToPm, &p.QueryID)
 	if err != nil {
 		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
