@@ -96,3 +96,8 @@ https://github.com/go-telegram-bot-api/telegram-bot-api
 ```
 go get -u github.com/go-telegram-bot-api/telegram-bot-api/v5
 ```
+
+Errors
+```
+go get -u github.com/pkg/errors
+```

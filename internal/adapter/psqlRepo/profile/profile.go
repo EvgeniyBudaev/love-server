@@ -39,6 +39,30 @@ func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profi
 	return p, nil
 }
 
+func (r *RepositoryProfile) Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug(
+			"error func Update, method Begin by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profiles SET display_name=$1, birthday=$2, gender=$3, search_gender=$4, location=$5," +
+		" description=$6, height=$7, weight=$8, looking_for=$9, is_blocked=$10, is_premium=$11, is_show_distance=$12," +
+		" is_invisible=$13, updated_at=$14, last_online=$15 WHERE id=$16"
+	_, err = r.db.ExecContext(ctx, query, p.DisplayName, p.Birthday, p.Gender, p.SearchGender, p.Location,
+		p.Description, p.Height, p.Weight, p.LookingFor, p.IsBlocked, p.IsPremium, p.IsShowDistance,
+		p.IsInvisible, p.UpdatedAt, p.LastOnline, p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func Update, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
 	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
@@ -107,7 +131,8 @@ func (r *RepositoryProfile) SelectList(
 func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
 	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
-       looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at, last_online
+       looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at,
+       last_online
 			  FROM profiles
 			  WHERE id = $1`
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -141,6 +166,28 @@ func (r *RepositoryProfile) AddTelegram(
 			zap.Error(err))
 		return nil, err
 	}
+	return p, nil
+}
+
+func (r *RepositoryProfile) UpdateTelegram(
+	ctx context.Context, p *profile.TelegramProfile) (*profile.TelegramProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateTelegram, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_telegram SET username=$1, first_name=$2, last_name=$3, language_code=$4," +
+		" allows_write_to_pm=$5 WHERE id=$6"
+	_, err = r.db.ExecContext(ctx, query, p.UserName, p.Firstname, p.Lastname, p.LanguageCode, p.AllowsWriteToPm, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateTelegram, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
 	return p, nil
 }
 
@@ -182,6 +229,28 @@ func (r *RepositoryProfile) AddImage(ctx context.Context, p *profile.ImageProfil
 	return p, nil
 }
 
+func (r *RepositoryProfile) UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateImage, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_images SET name=$1, url=$2, size=$3, updated_at=$4, is_deleted=$5, is_blocked=$6," +
+		" is_primary=$7, is_private=$8 WHERE id=$9"
+	_, err = r.db.ExecContext(ctx, query, p.Name, p.Url, p.Size, p.UpdatedAt, p.IsDeleted, p.IsBlocked, p.IsPrimary,
+		p.IsPrivate, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateImage method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
 func (r *RepositoryProfile) SelectListPublicImage(
 	ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error) {
 	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
@@ -208,4 +277,19 @@ func (r *RepositoryProfile) SelectListPublicImage(
 		list = append(list, &p)
 	}
 	return list, nil
+}
+
+func (r *RepositoryProfile) CheckIfCommonImageExists(
+	ctx context.Context, profileID uint64, fileName string) (bool, uint64, error) {
+	var imageID uint64
+	query := "SELECT id" +
+		" FROM profile_images WHERE profile_id=$1 AND name=$2"
+	err := r.db.QueryRowContext(ctx, query, profileID, fileName).Scan(&imageID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, 0, nil
+		}
+		return false, 0, err
+	}
+	return true, imageID, nil
 }

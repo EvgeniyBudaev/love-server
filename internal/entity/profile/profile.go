@@ -73,6 +73,27 @@ type RequestAddProfile struct {
 	Image           []byte       `json:"image"`
 }
 
+type RequestUpdateProfile struct {
+	TelegramID      string       `json:"telegramId"`
+	UserName        string       `json:"username"`
+	Firstname       string       `json:"firstName"`
+	Lastname        string       `json:"lastName"`
+	LanguageCode    string       `json:"languageCode"`
+	AllowsWriteToPm string       `json:"allowsWriteToPm"`
+	QueryID         string       `json:"queryId"`
+	ID              uint64       `json:"id"`
+	DisplayName     string       `json:"displayName"`
+	Birthday        time.Time    `json:"birthday"`
+	Gender          Gender       `json:"gender"`
+	SearchGender    SearchGender `json:"searchGender"`
+	Location        string       `json:"location"`
+	Description     string       `json:"description"`
+	Height          string       `json:"height"`
+	Weight          string       `json:"weight"`
+	LookingFor      LookingFor   `json:"lookingFor"`
+	Image           []byte       `json:"image"`
+}
+
 type ContentListProfile struct {
 	ID         uint64                `json:"id"`
 	LastOnline time.Time             `json:"lastOnline"`

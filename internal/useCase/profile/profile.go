@@ -10,12 +10,16 @@ import (
 
 type profileRepo interface {
 	Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
+	Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
+	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
 	AddImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
+	UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	SelectListPublicImage(ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error)
+	CheckIfCommonImageExists(ctx context.Context, profileID uint64, fileName string) (bool, uint64, error)
 }
 
 type UseCaseProfile struct {
@@ -31,13 +35,21 @@ func NewUseCaseProfile(l logger.Logger, pr profileRepo) *UseCaseProfile {
 }
 
 func (u *UseCaseProfile) Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
-	newProfile, err := u.profileRepo.Add(ctx, p)
+	response, err := u.profileRepo.Add(ctx, p)
 	if err != nil {
-		u.logger.Debug("error func Add, method profileRepo.Add by path internal/useCase/profile/profile.go",
-			zap.Error(err))
+		u.logger.Debug("error func Add, method Add by path internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
-	return newProfile, nil
+	return response, nil
+}
+
+func (u *UseCaseProfile) Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
+	response, err := u.profileRepo.Update(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func response, method Update by path internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
 }
 
 func (u *UseCaseProfile) SelectList(ctf *fiber.Ctx) (*profile.ResponseListProfile, error) {
@@ -76,6 +88,16 @@ func (u *UseCaseProfile) AddImage(ctx context.Context, i *profile.ImageProfile) 
 	return response, nil
 }
 
+func (u *UseCaseProfile) UpdateImage(ctx context.Context, i *profile.ImageProfile) (*profile.ImageProfile, error) {
+	response, err := u.profileRepo.UpdateImage(ctx, i)
+	if err != nil {
+		u.logger.Debug("error func AddImage, method UpdateImage by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
 func (u *UseCaseProfile) SelectListPublicImage(ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error) {
 	response, err := u.profileRepo.SelectListPublicImage(ctx, profileID)
 	if err != nil {
@@ -86,10 +108,27 @@ func (u *UseCaseProfile) SelectListPublicImage(ctx context.Context, profileID ui
 	return response, nil
 }
 
-func (u *UseCaseProfile) AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error) {
+func (u *UseCaseProfile) CheckIfCommonImageExists(
+	ctx context.Context, profileID uint64, fileName string) (bool, uint64, error) {
+	return u.profileRepo.CheckIfCommonImageExists(ctx, profileID, fileName)
+}
+
+func (u *UseCaseProfile) AddTelegram(
+	ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error) {
 	response, err := u.profileRepo.AddTelegram(ctx, t)
 	if err != nil {
 		u.logger.Debug("error func AddTelegram, method AddTelegram by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) UpdateTelegram(
+	ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error) {
+	response, err := u.profileRepo.UpdateTelegram(ctx, t)
+	if err != nil {
+		u.logger.Debug("error func UpdateTelegram, method AddTelegram by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
