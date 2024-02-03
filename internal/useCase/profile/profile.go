@@ -15,9 +15,11 @@ type profileRepo interface {
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
+	DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
 	AddImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
+	FindImageById(ctx context.Context, imageID uint64) (*profile.ImageProfile, error)
 	SelectListPublicImage(ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error)
 	CheckIfCommonImageExists(ctx context.Context, profileID uint64, fileName string) (bool, uint64, error)
 }
@@ -91,7 +93,27 @@ func (u *UseCaseProfile) AddImage(ctx context.Context, i *profile.ImageProfile) 
 func (u *UseCaseProfile) UpdateImage(ctx context.Context, i *profile.ImageProfile) (*profile.ImageProfile, error) {
 	response, err := u.profileRepo.UpdateImage(ctx, i)
 	if err != nil {
-		u.logger.Debug("error func AddImage, method UpdateImage by path internal/useCase/profile/profile.go",
+		u.logger.Debug("error func UpdateImage, method UpdateImage by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) DeleteImage(ctx context.Context, i *profile.ImageProfile) (*profile.ImageProfile, error) {
+	response, err := u.profileRepo.DeleteImage(ctx, i)
+	if err != nil {
+		u.logger.Debug("error func DeleteImage, method DeleteImage by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindImageById(ctx context.Context, imageID uint64) (*profile.ImageProfile, error) {
+	response, err := u.profileRepo.FindImageById(ctx, imageID)
+	if err != nil {
+		u.logger.Debug("error func FindImageById, method FindImageById by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}

@@ -293,7 +293,14 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		profileInDB, err := h.uc.FindById(ctf.Context(), req.ID)
+		profileID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug(
+				"error func UpdateProfileHandler, method ParseUint roomIdStr by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		profileInDB, err := h.uc.FindById(ctf.Context(), profileID)
 		if err := ctf.BodyParser(&req); err != nil {
 			h.logger.Debug(
 				"error func UpdateProfileHandler,"+
@@ -372,7 +379,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				imagesProfile = append(imagesProfile, &image)
 			}
 			profileDto = &profile.Profile{
-				ID:             req.ID,
+				ID:             profileID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -394,7 +401,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			}
 		} else {
 			profileDto = &profile.Profile{
-				ID:             req.ID,
+				ID:             profileID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -534,6 +541,64 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			LastOnline:     p.LastOnline,
 			Images:         i,
 			Telegram:       t,
+		}
+		return r.WrapCreated(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) DeleteProfileImageHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/profile/image/delete")
+		req := profile.RequestDeleteProfileImage{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileImageHandler,"+
+					" method BodyParser by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		imageID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileImageHandler, method ParseUint roomIdStr by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		imageInDB, err := h.uc.FindImageById(ctf.Context(), imageID)
+		if err != nil {
+			h.logger.Debug("error func DeleteProfileImageHandler, method FindImageById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		if imageInDB.IsDeleted == true {
+			msg := errors.Wrap(err, "image has already been deleted")
+			err = errorDomain.NewCustomError(msg, http.StatusNotFound)
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		filePath := imageInDB.Url
+		if err := os.Remove(filePath); err != nil {
+			h.logger.Debug("error func DeleteProfileImageHandler, method Remove by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		imageDTO := &profile.ImageProfile{
+			ID:        imageInDB.ID,
+			ProfileID: imageInDB.ProfileID,
+			Name:      "",
+			Url:       "",
+			Size:      0,
+			CreatedAt: imageInDB.CreatedAt,
+			UpdatedAt: time.Now(),
+			IsDeleted: true,
+			IsBlocked: imageInDB.IsBlocked,
+			IsPrimary: imageInDB.IsPrimary,
+			IsPrivate: imageInDB.IsPrivate,
+		}
+		response, err := h.uc.DeleteImage(ctf.Context(), imageDTO)
+		if err != nil {
+			h.logger.Debug("error func DeleteProfileImageHandler, method DeleteImage by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		return r.WrapCreated(ctf, response)
 	}

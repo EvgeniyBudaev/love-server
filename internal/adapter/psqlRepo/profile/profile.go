@@ -201,14 +201,14 @@ func (r *RepositoryProfile) FindTelegramById(ctx context.Context, profileID uint
 	if row == nil {
 		err := errors.New("no rows found")
 		r.logger.Debug(
-			"error func FindById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			"error func FindTelegramById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.ProfileID, &p.TelegramID, &p.UserName, &p.Firstname, &p.Lastname, &p.LanguageCode,
 		&p.AllowsWriteToPm, &p.QueryID)
 	if err != nil {
-		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+		r.logger.Debug("error func FindTelegramById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
@@ -249,6 +249,50 @@ func (r *RepositoryProfile) UpdateImage(ctx context.Context, p *profile.ImagePro
 	}
 	tx.Commit()
 	return p, nil
+}
+
+func (r *RepositoryProfile) DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func DeleteImage, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_images SET is_deleted=$1 WHERE id=$2"
+	_, err = r.db.ExecContext(ctx, query, p.IsDeleted, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func DeleteImage method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindImageById(ctx context.Context, imageID uint64) (*profile.ImageProfile, error) {
+	p := profile.ImageProfile{}
+	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
+       is_private
+			  FROM profile_images
+			  WHERE id=$1`
+	row := r.db.QueryRowContext(ctx, query, imageID)
+	if row == nil {
+		err := errors.New("no rows found")
+		r.logger.Debug(
+			"error func FindImageById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	err := row.Scan(&p.ID, &p.ProfileID, &p.Name, &p.Url, &p.Size, &p.CreatedAt, &p.UpdatedAt,
+		&p.IsDeleted, &p.IsBlocked, &p.IsPrimary, &p.IsPrivate)
+	if err != nil {
+		r.logger.Debug("error func FindImageById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return &p, nil
 }
 
 func (r *RepositoryProfile) SelectListPublicImage(

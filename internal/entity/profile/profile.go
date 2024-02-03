@@ -81,7 +81,7 @@ type RequestUpdateProfile struct {
 	LanguageCode    string       `json:"languageCode"`
 	AllowsWriteToPm string       `json:"allowsWriteToPm"`
 	QueryID         string       `json:"queryId"`
-	ID              uint64       `json:"id"`
+	ID              string       `json:"id"`
 	DisplayName     string       `json:"displayName"`
 	Birthday        time.Time    `json:"birthday"`
 	Gender          Gender       `json:"gender"`
@@ -92,6 +92,10 @@ type RequestUpdateProfile struct {
 	Weight          string       `json:"weight"`
 	LookingFor      LookingFor   `json:"lookingFor"`
 	Image           []byte       `json:"image"`
+}
+
+type RequestDeleteProfileImage struct {
+	ID string `json:"id"`
 }
 
 type ContentListProfile struct {
