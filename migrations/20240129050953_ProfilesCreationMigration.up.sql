@@ -1,19 +1,15 @@
-CREATE TYPE gender_enum AS ENUM ('man', 'woman');
-CREATE TYPE search_gender_enum AS ENUM ('man', 'woman', 'all');
-CREATE TYPE looking_for_enum AS ENUM ('chat', 'dates', 'relationship', 'friendship', 'business', 'sex');
-
 CREATE TABLE profiles
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     display_name VARCHAR NOT NULL,
     birthday TIMESTAMP NOT NULL,
-    gender gender_enum NOT NULL,
-    search_gender search_gender_enum NOT NULL,
-    location VARCHAR NOT NULL,
+    gender VARCHAR,
+    search_gender VARCHAR,
+    location VARCHAR,
     description VARCHAR,
     height INTEGER,
     weight INTEGER,
-    looking_for looking_for_enum,
+    looking_for VARCHAR,
     is_deleted BOOL NOT NULL,
     is_blocked BOOL NOT NULL,
     is_premium BOOL NOT NULL,

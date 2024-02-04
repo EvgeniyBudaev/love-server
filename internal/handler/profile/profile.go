@@ -78,22 +78,28 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			imagesFilePath = append(imagesFilePath, filePath)
 			imagesProfile = append(imagesProfile, &image)
 		}
-		heightUint64, err := strconv.ParseUint(req.Height, 10, 8)
-		if err != nil {
-			h.logger.Debug(
-				"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
+		height := 0
+		if req.Height != "" {
+			heightUint64, err := strconv.ParseUint(req.Height, 10, 8)
+			if err != nil {
+				h.logger.Debug(
+					"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			height = int(heightUint64)
 		}
-		height := uint8(heightUint64)
-		weightUint64, err := strconv.ParseUint(req.Weight, 10, 8)
-		if err != nil {
-			h.logger.Debug(
-				"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
+		weight := 0
+		if req.Weight != "" {
+			weightUint64, err := strconv.ParseUint(req.Weight, 10, 8)
+			if err != nil {
+				h.logger.Debug(
+					"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			weight = int(weightUint64)
 		}
-		weight := uint8(weightUint64)
 		profileDto := &profile.Profile{
 			DisplayName:    req.DisplayName,
 			Birthday:       req.Birthday,
@@ -101,8 +107,8 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			SearchGender:   req.SearchGender,
 			Location:       req.Location,
 			Description:    req.Description,
-			Height:         height,
-			Weight:         weight,
+			Height:         uint8(height),
+			Weight:         uint8(weight),
 			LookingFor:     req.LookingFor,
 			IsDeleted:      false,
 			IsBlocked:      false,
@@ -335,22 +341,28 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		heightUint64, err := strconv.ParseUint(req.Height, 10, 8)
-		if err != nil {
-			h.logger.Debug(
-				"error func UpdateProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
+		height := 0
+		if req.Height != "" {
+			heightUint64, err := strconv.ParseUint(req.Height, 10, 8)
+			if err != nil {
+				h.logger.Debug(
+					"error func UpdateProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			height = int(heightUint64)
 		}
-		height := uint8(heightUint64)
-		weightUint64, err := strconv.ParseUint(req.Weight, 10, 8)
-		if err != nil {
-			h.logger.Debug(
-				"error func UpdateProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
+		weight := 0
+		if req.Weight != "" {
+			weightUint64, err := strconv.ParseUint(req.Weight, 10, 8)
+			if err != nil {
+				h.logger.Debug(
+					"error func UpdateProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			weight = int(weightUint64)
 		}
-		weight := uint8(weightUint64)
 		imageFiles := form.File["image"]
 		profileDto := &profile.Profile{}
 		if len(imageFiles) > 0 {
@@ -386,8 +398,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				SearchGender:   req.SearchGender,
 				Location:       req.Location,
 				Description:    req.Description,
-				Height:         height,
-				Weight:         weight,
+				Height:         uint8(height),
+				Weight:         uint8(weight),
 				LookingFor:     req.LookingFor,
 				IsDeleted:      profileInDB.IsDeleted,
 				IsBlocked:      profileInDB.IsBlocked,
@@ -408,8 +420,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				SearchGender:   req.SearchGender,
 				Location:       req.Location,
 				Description:    req.Description,
-				Height:         height,
-				Weight:         weight,
+				Height:         uint8(height),
+				Weight:         uint8(weight),
 				LookingFor:     req.LookingFor,
 				IsDeleted:      profileInDB.IsDeleted,
 				IsBlocked:      profileInDB.IsBlocked,

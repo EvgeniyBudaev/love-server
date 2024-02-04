@@ -63,12 +63,38 @@ func (r *RepositoryProfile) Update(ctx context.Context, p *profile.Profile) (*pr
 	return p, nil
 }
 
+func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
+	p := profile.Profile{}
+	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
+       looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at,
+       last_online
+			  FROM profiles
+			  WHERE id = $1`
+	row := r.db.QueryRowContext(ctx, query, id)
+	if row == nil {
+		err := errors.New("no rows found")
+		r.logger.Debug(
+			"error func FindById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
+		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
+		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+	if err != nil {
+		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
 	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
 		" looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at," +
-		" last_online FROM profiles WHERE is_deleted = false"
-	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted = false"
+		" last_online FROM profiles WHERE is_deleted=false AND is_blocked=false"
+	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false"
 	limit := qp.Limit
 	page := qp.Page
 	// get totalItems
@@ -126,32 +152,6 @@ func (r *RepositoryProfile) SelectList(
 		Content:    list,
 	}
 	return &response, nil
-}
-
-func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
-	p := profile.Profile{}
-	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
-       looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at,
-       last_online
-			  FROM profiles
-			  WHERE id = $1`
-	row := r.db.QueryRowContext(ctx, query, id)
-	if row == nil {
-		err := errors.New("no rows found")
-		r.logger.Debug(
-			"error func FindById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
-		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
-		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
-	if err != nil {
-		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	return &p, nil
 }
 
 func (r *RepositoryProfile) AddTelegram(
@@ -276,7 +276,7 @@ func (r *RepositoryProfile) FindImageById(ctx context.Context, imageID uint64) (
 	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
        is_private
 			  FROM profile_images
-			  WHERE id=$1`
+			  WHERE id=$1 AND is_deleted=false AND is_blocked=false`
 	row := r.db.QueryRowContext(ctx, query, imageID)
 	if row == nil {
 		err := errors.New("no rows found")
@@ -300,7 +300,7 @@ func (r *RepositoryProfile) SelectListPublicImage(
 	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
        is_private
 	FROM profile_images
-	WHERE profile_id = $1`
+	WHERE profile_id=$1 AND is_deleted=false AND is_blocked=false`
 	rows, err := r.db.QueryContext(ctx, query, profileID)
 	if err != nil {
 		r.logger.Debug("error func SelectListPublicImage,"+
