@@ -496,8 +496,14 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
+		t, err := h.uc.FindTelegramById(ctf.Context(), profileUpdated.ID)
+		if err != nil {
+			h.logger.Debug("error func UpdateProfileHandler, method FindTelegramById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		telegramDto := &profile.TelegramProfile{
-			ID:              telegramID,
+			ID:              t.ID,
 			ProfileID:       profileUpdated.ID,
 			TelegramID:      telegramID,
 			UserName:        req.UserName,
@@ -520,7 +526,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), p.ID)
+		t, err = h.uc.FindTelegramById(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func UpdateProfileHandler method FindTelegramById by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -552,6 +558,158 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			UpdatedAt:      p.UpdatedAt,
 			LastOnline:     p.LastOnline,
 			Images:         i,
+			Telegram:       t,
+		}
+		return r.WrapCreated(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/profile/delete")
+		req := profile.RequestDeleteProfile{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler,"+
+					" method BodyParser by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		profileID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler, method ParseUint roomIdStr by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		profileInDB, err := h.uc.FindById(ctf.Context(), profileID)
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler,"+
+					" method FindById by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusNotFound)
+		}
+		if profileInDB.IsDeleted == true {
+			msg := errors.Wrap(err, "user has already been deleted")
+			err = errorDomain.NewCustomError(msg, http.StatusNotFound)
+			return r.WrapError(ctf, err, http.StatusNotFound)
+		}
+		imageList, err := h.uc.SelectListImage(ctf.Context(), profileID)
+		if len(imageList) > 0 {
+			for _, i := range imageList {
+				filePath := i.Url
+				if err := os.Remove(filePath); err != nil {
+					h.logger.Debug("error func DeleteProfileHandler, method Remove by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				imageDTO := &profile.ImageProfile{
+					ID:        i.ID,
+					ProfileID: i.ProfileID,
+					Name:      "",
+					Url:       "",
+					Size:      0,
+					CreatedAt: i.CreatedAt,
+					UpdatedAt: time.Now(),
+					IsDeleted: true,
+					IsBlocked: i.IsBlocked,
+					IsPrimary: i.IsPrimary,
+					IsPrivate: i.IsPrivate,
+				}
+				_, err := h.uc.DeleteImage(ctf.Context(), imageDTO)
+				if err != nil {
+					h.logger.Debug("error func DeleteProfileHandler, method DeleteImage by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+			}
+		}
+		t, err := h.uc.FindTelegramById(ctf.Context(), profileInDB.ID)
+		if err != nil {
+			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		telegramDto := &profile.TelegramProfile{
+			ID:              t.ID,
+			ProfileID:       profileInDB.ID,
+			TelegramID:      0,
+			UserName:        "",
+			Firstname:       "",
+			Lastname:        "",
+			LanguageCode:    "",
+			AllowsWriteToPm: false,
+			QueryID:         "",
+		}
+		_, err = h.uc.DeleteTelegram(ctf.Context(), telegramDto)
+		if err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler, method DeleteTelegram by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		profileDto := &profile.Profile{
+			ID:             profileID,
+			DisplayName:    "",
+			Birthday:       profileInDB.Birthday,
+			Gender:         "",
+			SearchGender:   "",
+			Location:       "",
+			Description:    "",
+			Height:         0,
+			Weight:         0,
+			LookingFor:     "",
+			IsDeleted:      true,
+			IsBlocked:      false,
+			IsPremium:      false,
+			IsShowDistance: false,
+			IsInvisible:    false,
+			CreatedAt:      profileInDB.CreatedAt,
+			UpdatedAt:      time.Now(),
+			LastOnline:     time.Now(),
+		}
+		_, err = h.uc.Delete(ctf.Context(), profileDto)
+		if err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler, method Delete by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		t, err = h.uc.FindTelegramById(ctf.Context(), profileInDB.ID)
+		if err != nil {
+			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		p, err := h.uc.FindById(ctf.Context(), profileID)
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug(
+				"error func DeleteProfileHandler,"+
+					" method FindById by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusNotFound)
+		}
+		response := &profile.Profile{
+			ID:             p.ID,
+			DisplayName:    p.DisplayName,
+			Birthday:       p.Birthday,
+			Gender:         p.Gender,
+			SearchGender:   p.SearchGender,
+			Location:       p.Location,
+			Description:    p.Description,
+			Height:         p.Height,
+			Weight:         p.Weight,
+			LookingFor:     p.LookingFor,
+			IsDeleted:      p.IsDeleted,
+			IsBlocked:      p.IsBlocked,
+			IsPremium:      p.IsPremium,
+			IsShowDistance: p.IsShowDistance,
+			IsInvisible:    p.IsInvisible,
+			CreatedAt:      p.CreatedAt,
+			UpdatedAt:      p.UpdatedAt,
+			LastOnline:     p.LastOnline,
+			Images:         nil,
 			Telegram:       t,
 		}
 		return r.WrapCreated(ctf, response)

@@ -70,6 +70,7 @@ func (app *App) StartHTTPServer() error {
 	grp := app.fiber.Group(prefix)
 	grp.Post("/profile/add", ph.AddProfileHandler())
 	grp.Post("/profile/edit", ph.UpdateProfileHandler())
+	grp.Post("/profile/delete", ph.DeleteProfileHandler())
 	grp.Get("/profile/list", ph.GetProfileListHandler())
 	grp.Get("/profile/:id", ph.GetProfileHandler())
 	grp.Post("/profile/image/delete", ph.DeleteProfileImageHandler())

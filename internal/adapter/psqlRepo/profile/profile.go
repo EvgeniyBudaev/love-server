@@ -63,6 +63,30 @@ func (r *RepositoryProfile) Update(ctx context.Context, p *profile.Profile) (*pr
 	return p, nil
 }
 
+func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug(
+			"error func Delete, method Begin by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profiles SET display_name=$1, birthday=$2, gender=$3, search_gender=$4, location=$5," +
+		" description=$6, height=$7, weight=$8, looking_for=$9, is_deleted=$10, is_blocked=$11, is_premium=$12," +
+		" is_show_distance=$13, is_invisible=$14, updated_at=$15, last_online=$16 WHERE id=$17"
+	_, err = r.db.ExecContext(ctx, query, p.DisplayName, p.Birthday, p.Gender, p.SearchGender, p.Location,
+		p.Description, p.Height, p.Weight, p.LookingFor, p.IsDeleted, p.IsBlocked, p.IsPremium, p.IsShowDistance,
+		p.IsInvisible, p.UpdatedAt, p.LastOnline, p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func Delete, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
 func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
 	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
@@ -191,6 +215,29 @@ func (r *RepositoryProfile) UpdateTelegram(
 	return p, nil
 }
 
+func (r *RepositoryProfile) DeleteTelegram(
+	ctx context.Context, p *profile.TelegramProfile) (*profile.TelegramProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func DeleteTelegram, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_telegram SET telegram_id=$1, username=$2, first_name=$3, last_name=$4, language_code=$5," +
+		" allows_write_to_pm=$6, query_id=$7 WHERE id=$8"
+	_, err = r.db.ExecContext(ctx, query, p.TelegramID, p.UserName, p.Firstname, p.Lastname, p.LanguageCode,
+		p.AllowsWriteToPm, p.QueryID, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func DeleteTelegram, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
 func (r *RepositoryProfile) FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error) {
 	p := profile.TelegramProfile{}
 	query := `SELECT id, profile_id, telegram_id, username, first_name, last_name, language_code, allows_write_to_pm,
@@ -300,7 +347,7 @@ func (r *RepositoryProfile) SelectListPublicImage(
 	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
        is_private
 	FROM profile_images
-	WHERE profile_id=$1 AND is_deleted=false AND is_blocked=false`
+	WHERE profile_id=$1 AND is_deleted=false AND is_blocked=false AND is_private=false`
 	rows, err := r.db.QueryContext(ctx, query, profileID)
 	if err != nil {
 		r.logger.Debug("error func SelectListPublicImage,"+
@@ -315,6 +362,34 @@ func (r *RepositoryProfile) SelectListPublicImage(
 			&p.IsBlocked, &p.IsPrimary, &p.IsPrivate)
 		if err != nil {
 			r.logger.Debug("error func SelectListPublicImage,"+
+				" method Scan by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+			continue
+		}
+		list = append(list, &p)
+	}
+	return list, nil
+}
+
+func (r *RepositoryProfile) SelectListImage(
+	ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error) {
+	query := `SELECT id, profile_id, name, url, size, created_at, updated_at, is_deleted, is_blocked, is_primary,
+       is_private
+	FROM profile_images
+	WHERE profile_id=$1`
+	rows, err := r.db.QueryContext(ctx, query, profileID)
+	if err != nil {
+		r.logger.Debug("error func SelectListImage,"+
+			" method QueryContext by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+	list := make([]*profile.ImageProfile, 0)
+	for rows.Next() {
+		p := profile.ImageProfile{}
+		err := rows.Scan(&p.ID, &p.ProfileID, &p.Name, &p.Url, &p.Size, &p.CreatedAt, &p.UpdatedAt, &p.IsDeleted,
+			&p.IsBlocked, &p.IsPrimary, &p.IsPrivate)
+		if err != nil {
+			r.logger.Debug("error func SelectListImage,"+
 				" method Scan by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 			continue
 		}

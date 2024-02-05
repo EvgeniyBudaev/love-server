@@ -70,6 +70,10 @@ type RequestUpdateProfile struct {
 	Image           []byte    `json:"image"`
 }
 
+type RequestDeleteProfile struct {
+	ID string `json:"id"`
+}
+
 type RequestDeleteProfileImage struct {
 	ID string `json:"id"`
 }
