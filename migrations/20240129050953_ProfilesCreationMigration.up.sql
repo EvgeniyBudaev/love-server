@@ -2,7 +2,7 @@ CREATE TABLE profiles
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
     display_name VARCHAR NOT NULL,
-    birthday TIMESTAMP NOT NULL,
+    birthday DATE NOT NULL,
     gender VARCHAR,
     search_gender VARCHAR,
     location VARCHAR,

@@ -8,6 +8,8 @@ import (
 	"github.com/EvgeniyBudaev/love-server/internal/entity/profile"
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
 	"go.uber.org/zap"
+	"strconv"
+	"time"
 )
 
 type RepositoryProfile struct {
@@ -23,11 +25,12 @@ func NewRepositoryProfile(logger logger.Logger, db *sql.DB) *RepositoryProfile {
 }
 
 func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
+	birthday := p.Birthday.Format("2006-01-02")
 	query := "INSERT INTO profiles (display_name, birthday, gender, search_gender, location, description, height," +
 		" weight, looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at," +
 		" updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15," +
 		" $16, $17) RETURNING id"
-	err := r.db.QueryRowContext(ctx, query, p.DisplayName, p.Birthday, p.Gender, p.SearchGender, p.Location,
+	err := r.db.QueryRowContext(ctx, query, p.DisplayName, birthday, p.Gender, p.SearchGender, p.Location,
 		p.Description, p.Height, p.Weight, p.LookingFor, p.IsDeleted, p.IsBlocked, p.IsPremium, p.IsShowDistance,
 		p.IsInvisible, p.CreatedAt, p.UpdatedAt, p.LastOnline).Scan(&p.ID)
 	if err != nil {
@@ -115,14 +118,26 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
+	ageFromInt, err := strconv.Atoi(qp.AgeFrom)
+	if err != nil {
+		return nil, err
+	}
+	ageToInt, err := strconv.Atoi(qp.AgeTo)
+	if err != nil {
+		return nil, err
+	}
+	birthYearStart := time.Now().Year() - ageToInt - 1
+	birthYearEnd := time.Now().Year() - ageFromInt
+	birthdateFrom := time.Date(birthYearStart, time.January, 1, 0, 0, 0, 0, time.UTC)
+	birthdateTo := time.Date(birthYearEnd, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
 		" looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at," +
-		" last_online FROM profiles WHERE is_deleted=false AND is_blocked=false"
-	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false"
+		" last_online FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2"
+	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2"
 	limit := qp.Limit
 	page := qp.Page
 	// get totalItems
-	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery)
+	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery, birthdateFrom, birthdateTo)
 	if err != nil {
 		r.logger.Debug(
 			"error func SelectList, method GetTotalItems by path internal/adapter/psqlRepo/profile/profile.go",
@@ -132,7 +147,8 @@ func (r *RepositoryProfile) SelectList(
 	// pagination
 	query = pagination.ApplyPagination(query, page, limit)
 	countQuery = pagination.ApplyPagination(countQuery, page, limit)
-	rows, err := r.db.QueryContext(ctx, query)
+	queryParams := []interface{}{birthdateFrom, birthdateTo}
+	rows, err := r.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		r.logger.Debug(
 			"error func SelectList, method QueryContext by path internal/adapter/psqlRepo/profile/profile.go",

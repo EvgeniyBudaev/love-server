@@ -97,6 +97,8 @@ type ComplaintProfile struct {
 
 type QueryParamsProfileList struct {
 	pagination.Pagination
+	AgeFrom string `json:"ageFrom"`
+	AgeTo   string `json:"ageTo"`
 }
 
 type TelegramProfile struct {

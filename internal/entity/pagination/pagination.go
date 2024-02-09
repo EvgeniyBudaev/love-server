@@ -32,9 +32,9 @@ func ApplyPagination(sqlQuery string, page uint64, limit uint64) string {
 	return sqlQuery
 }
 
-func GetTotalItems(ctx context.Context, db *sql.DB, sqlQuery string) (uint64, error) {
+func GetTotalItems(ctx context.Context, db *sql.DB, sqlQuery string, args ...interface{}) (uint64, error) {
 	var totalItems uint64
-	err := db.QueryRowContext(ctx, sqlQuery).Scan(&totalItems)
+	err := db.QueryRowContext(ctx, sqlQuery, args...).Scan(&totalItems)
 	if err != nil {
 		return 0, err
 	}

@@ -220,7 +220,15 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		h.logger.Info("GET /api/v1/profile/list")
-		response, err := h.uc.SelectList(ctf)
+		var params profile.QueryParamsProfileList
+		if err := ctf.QueryParser(&params); err != nil {
+			h.logger.Debug(
+				"error func GetProfileListHandler, method QueryParser by path"+
+					" internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		response, err := h.uc.SelectList(ctf.Context(), &params)
 		if err != nil {
 			h.logger.Debug(
 				"error func GetProfileListHandler, method SelectList by path"+

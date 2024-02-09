@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/EvgeniyBudaev/love-server/internal/entity/profile"
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
-	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
 
@@ -66,14 +65,8 @@ func (u *UseCaseProfile) Delete(ctx context.Context, p *profile.Profile) (*profi
 	return response, nil
 }
 
-func (u *UseCaseProfile) SelectList(ctf *fiber.Ctx) (*profile.ResponseListProfile, error) {
-	var params profile.QueryParamsProfileList
-	if err := ctf.QueryParser(&params); err != nil {
-		u.logger.Debug("error func SelectList, method QueryParser by path internal/useCase/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	response, err := u.profileRepo.SelectList(ctf.Context(), &params)
+func (u *UseCaseProfile) SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
+	response, err := u.profileRepo.SelectList(ctx, qp)
 	if err != nil {
 		u.logger.Debug("error func SelectList, method SelectList by path internal/useCase/profile/profile.go",
 			zap.Error(err))
