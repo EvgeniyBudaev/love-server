@@ -13,6 +13,7 @@ type profileRepo interface {
 	Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
+	FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	DeleteTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
@@ -79,6 +80,16 @@ func (u *UseCaseProfile) FindById(ctx context.Context, id uint64) (*profile.Prof
 	response, err := u.profileRepo.FindById(ctx, id)
 	if err != nil {
 		u.logger.Debug("error func FindById, method FindById by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error) {
+	response, err := u.profileRepo.FindByTelegramId(ctx, telegramID)
+	if err != nil {
+		u.logger.Debug("error func FindByTelegramId, method FindById by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}

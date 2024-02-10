@@ -72,7 +72,9 @@ func (app *App) StartHTTPServer() error {
 	grp.Post("/profile/edit", ph.UpdateProfileHandler())
 	grp.Post("/profile/delete", ph.DeleteProfileHandler())
 	grp.Get("/profile/list", ph.GetProfileListHandler())
-	grp.Get("/profile/:id", ph.GetProfileHandler())
+	grp.Get("/profile/telegram/:id", ph.GetProfileByTelegramIDHandler())
+	grp.Get("/profile/:id", ph.GetProfileByIDHandler())
+	grp.Get("/profile/detail/:id", ph.GetProfileDetailHandler())
 	grp.Post("/profile/image/delete", ph.DeleteProfileImageHandler())
 	if err := app.fiber.Listen(app.config.Port); err != nil {
 		app.Logger.Fatal("error func StartHTTPServer, method Listen by path internal/app/http.go", zap.Error(err))

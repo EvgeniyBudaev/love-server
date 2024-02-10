@@ -116,6 +116,33 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 	return &p, nil
 }
 
+func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error) {
+	p := profile.Profile{}
+	query := `SELECT p.id, p.display_name, p.birthday, p.gender, p.search_gender, p.location, p.description, p.height,
+       p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance, p.is_invisible,
+       p.created_at, p.updated_at,  p.last_online
+			  FROM profiles p
+			  JOIN profile_telegram pt ON p.id = pt.profile_id
+			  WHERE pt.telegram_id = $1`
+	row := r.db.QueryRowContext(ctx, query, telegramID)
+	if row == nil {
+		err := errors.New("no rows found")
+		r.logger.Debug(
+			"error func FindByTelegramId, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
+		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
+		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+	if err != nil {
+		r.logger.Debug("error func FindByTelegramId, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
 	ageFromInt, err := strconv.Atoi(qp.AgeFrom)
@@ -132,12 +159,12 @@ func (r *RepositoryProfile) SelectList(
 	birthdateTo := time.Date(birthYearEnd, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
 		" looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at," +
-		" last_online FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2"
-	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2"
+		" last_online FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2 AND ($3 = 'all' OR gender=$3)"
+	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2 AND ($3 = 'all' OR gender=$3)"
 	limit := qp.Limit
 	page := qp.Page
 	// get totalItems
-	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery, birthdateFrom, birthdateTo)
+	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery, birthdateFrom, birthdateTo, qp.SearchGender)
 	if err != nil {
 		r.logger.Debug(
 			"error func SelectList, method GetTotalItems by path internal/adapter/psqlRepo/profile/profile.go",
@@ -147,7 +174,7 @@ func (r *RepositoryProfile) SelectList(
 	// pagination
 	query = pagination.ApplyPagination(query, page, limit)
 	countQuery = pagination.ApplyPagination(countQuery, page, limit)
-	queryParams := []interface{}{birthdateFrom, birthdateTo}
+	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender}
 	rows, err := r.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		r.logger.Debug(

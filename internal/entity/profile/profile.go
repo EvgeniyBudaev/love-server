@@ -89,6 +89,13 @@ type ResponseListProfile struct {
 	Content []*ContentListProfile `json:"content"`
 }
 
+type ResponseProfile struct {
+	ID           uint64                   `json:"id"`
+	SearchGender string                   `json:"searchGender"`
+	Image        *ResponseImageProfile    `json:"image"`
+	Telegram     *ResponseTelegramProfile `json:"telegram"`
+}
+
 type ComplaintProfile struct {
 	ID        uint64 `json:"id"`
 	ProfileID uint64 `json:"profileId"`
@@ -97,8 +104,9 @@ type ComplaintProfile struct {
 
 type QueryParamsProfileList struct {
 	pagination.Pagination
-	AgeFrom string `json:"ageFrom"`
-	AgeTo   string `json:"ageTo"`
+	AgeFrom      string `json:"ageFrom"`
+	AgeTo        string `json:"ageTo"`
+	SearchGender string `json:"searchGender"`
 }
 
 type TelegramProfile struct {
@@ -129,4 +137,8 @@ type ImageProfile struct {
 
 type ResponseImageProfile struct {
 	Url string `json:"url"`
+}
+
+type ResponseTelegramProfile struct {
+	TelegramID uint64 `json:"telegramId"`
 }

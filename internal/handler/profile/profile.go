@@ -220,7 +220,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		h.logger.Info("GET /api/v1/profile/list")
-		var params profile.QueryParamsProfileList
+		params := profile.QueryParamsProfileList{}
 		if err := ctf.QueryParser(&params); err != nil {
 			h.logger.Debug(
 				"error func GetProfileListHandler, method QueryParser by path"+
@@ -240,33 +240,119 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 	}
 }
 
-func (h *HandlerProfile) GetProfileHandler() fiber.Handler {
+func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("GET /api/v1/profile/:id")
+		h.logger.Info("GET /api/v1/profile/telegram/:id")
 		idStr := ctf.Params("id")
 		id, err := strconv.ParseUint(idStr, 10, 64)
 		if err != nil {
-			h.logger.Debug("error func GetProfileHandler, method ParseUint by path internal/handler/profile/profile.go",
-				zap.Error(err))
+			h.logger.Debug("error func GetProfileByTelegramIDHandler, method ParseUint by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		p, err := h.uc.FindById(ctf.Context(), id)
+		p, err := h.uc.FindByTelegramId(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug(
-				"error func GetProfileHandler, method FindById by path"+
-					" internal/handler/profile/profile.go",
-				zap.Error(err))
+			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		t, err := h.uc.FindTelegramById(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug("error func GetProfileHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindTelegramById by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		i, err := h.uc.SelectListPublicImage(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug("error func GetProfileHandler, method SelectListPublicImage by path"+
+			h.logger.Debug("error func GetProfileByTelegramIDHandler, method SelectListPublicImage by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		response := &profile.ResponseProfile{
+			ID:           p.ID,
+			SearchGender: p.SearchGender,
+			Image:        nil,
+			Telegram:     &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
+		}
+		if len(i) > 0 {
+			i := profile.ResponseImageProfile{
+				Url: i[0].Url,
+			}
+			response.Image = &i
+		}
+		return r.WrapOk(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) GetProfileByIDHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("GET /api/v1/profile/:id")
+		idStr := ctf.Params("id")
+		id, err := strconv.ParseUint(idStr, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func GetProfileByIDHandler, method ParseUint by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		p, err := h.uc.FindById(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileByIDHandler, method FindById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		t, err := h.uc.FindTelegramById(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileByIDHandler, method FindTelegramById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		i, err := h.uc.SelectListPublicImage(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileByIDHandler, method SelectListPublicImage by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		response := &profile.ResponseProfile{
+			ID:           p.ID,
+			SearchGender: p.SearchGender,
+			Image:        nil,
+			Telegram:     &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
+		}
+		if len(i) > 0 {
+			i := profile.ResponseImageProfile{
+				Url: i[0].Url,
+			}
+			response.Image = &i
+		}
+		return r.WrapOk(ctf, response)
+	}
+}
+
+func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("GET /api/v1/profile/detail/:id")
+		idStr := ctf.Params("id")
+		id, err := strconv.ParseUint(idStr, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, method ParseUint by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		p, err := h.uc.FindById(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, method FindById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		t, err := h.uc.FindTelegramById(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, method FindTelegramById by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		i, err := h.uc.SelectListPublicImage(ctf.Context(), id)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, method SelectListPublicImage by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
