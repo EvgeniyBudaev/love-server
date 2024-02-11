@@ -10,6 +10,7 @@ import (
 type profileRepo interface {
 	Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
+	UpdateLastOnline(ctx context.Context, profileID uint64) error
 	Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
@@ -17,8 +18,11 @@ type profileRepo interface {
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	DeleteTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
-	DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
+	AddNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
+	UpdateNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
+	FindNavigatorById(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error)
+	DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	AddImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	FindImageById(ctx context.Context, imageID uint64) (*profile.ImageProfile, error)
@@ -57,6 +61,16 @@ func (u *UseCaseProfile) Update(ctx context.Context, p *profile.Profile) (*profi
 	return response, nil
 }
 
+func (u *UseCaseProfile) UpdateLastOnline(ctx context.Context, profileID uint64) error {
+	err := u.profileRepo.UpdateLastOnline(ctx, profileID)
+	if err != nil {
+		u.logger.Debug("error func UpdateLastOnline, method UpdateLastOnline by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
 func (u *UseCaseProfile) Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	response, err := u.profileRepo.Delete(ctx, p)
 	if err != nil {
@@ -66,7 +80,8 @@ func (u *UseCaseProfile) Delete(ctx context.Context, p *profile.Profile) (*profi
 	return response, nil
 }
 
-func (u *UseCaseProfile) SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
+func (u *UseCaseProfile) SelectList(
+	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
 	response, err := u.profileRepo.SelectList(ctx, qp)
 	if err != nil {
 		u.logger.Debug("error func SelectList, method SelectList by path internal/useCase/profile/profile.go",
@@ -89,8 +104,8 @@ func (u *UseCaseProfile) FindById(ctx context.Context, id uint64) (*profile.Prof
 func (u *UseCaseProfile) FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error) {
 	response, err := u.profileRepo.FindByTelegramId(ctx, telegramID)
 	if err != nil {
-		u.logger.Debug("error func FindByTelegramId, method FindById by path internal/useCase/profile/profile.go",
-			zap.Error(err))
+		u.logger.Debug("error func FindByTelegramId, methodFindByTelegramId by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	return response, nil
@@ -176,7 +191,7 @@ func (u *UseCaseProfile) UpdateTelegram(
 	ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error) {
 	response, err := u.profileRepo.UpdateTelegram(ctx, t)
 	if err != nil {
-		u.logger.Debug("error func UpdateTelegram, method AddTelegram by path internal/useCase/profile/profile.go",
+		u.logger.Debug("error func UpdateTelegram, method UpdateTelegram by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
@@ -187,7 +202,7 @@ func (u *UseCaseProfile) DeleteTelegram(
 	ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error) {
 	response, err := u.profileRepo.DeleteTelegram(ctx, t)
 	if err != nil {
-		u.logger.Debug("error func DeleteTelegram, method AddTelegram by path internal/useCase/profile/profile.go",
+		u.logger.Debug("error func DeleteTelegram, method DeleteTelegram by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
@@ -198,6 +213,38 @@ func (u *UseCaseProfile) FindTelegramById(ctx context.Context, profileID uint64)
 	response, err := u.profileRepo.FindTelegramById(ctx, profileID)
 	if err != nil {
 		u.logger.Debug("error func FindTelegramById, method FindTelegramById by path "+
+			"internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) AddNavigator(
+	ctx context.Context, n *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
+	response, err := u.profileRepo.AddNavigator(ctx, n)
+	if err != nil {
+		u.logger.Debug("error func AddNavigator, method AddNavigator by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) UpdateNavigator(
+	ctx context.Context, n *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
+	response, err := u.profileRepo.UpdateNavigator(ctx, n)
+	if err != nil {
+		u.logger.Debug("error func UpdateTNavigator, method UpdateNavigator by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindNavigatorById(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
+	response, err := u.profileRepo.FindNavigatorById(ctx, profileID)
+	if err != nil {
+		u.logger.Debug("error func FindNavigatorById, method FindNavigatorById by path "+
 			"internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}

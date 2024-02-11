@@ -61,6 +61,7 @@ sudo rm migrate.list
 migrate create -ext sql -dir migrations ProfilesCreationMigration
 migrate create -ext sql -dir migrations ProfileComplaintsCreationMigration
 migrate create -ext sql -dir migrations ProfileTelegramCreationMigration
+migrate create -ext sql -dir migrations ProfileNavigatorsCreationMigration
 migrate create -ext sql -dir migrations ProfileImagesCreationMigration
 ```
 
@@ -76,7 +77,7 @@ migrate -path migrations -database "postgres://localhost:5432/tgbot?sslmode=disa
 
 Если ошибка Dirty database version 1. Fix and force version
 ```
-migrate create -ext sql -dir migrations ProfilesCreationMigration force 20240129050815
+migrate create -ext sql -dir migrations ProfilesCreationMigration force 20240210114558
 ```
 
 Fiber

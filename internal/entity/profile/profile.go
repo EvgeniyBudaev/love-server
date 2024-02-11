@@ -27,6 +27,7 @@ type Profile struct {
 	Images         []*ImageProfile     `json:"images"`
 	Complaints     []*ComplaintProfile `json:"complaints"`
 	Telegram       *TelegramProfile    `json:"telegram"`
+	Navigator      *NavigatorProfile   `json:"navigator"`
 }
 
 type RequestAddProfile struct {
@@ -46,6 +47,8 @@ type RequestAddProfile struct {
 	Height          string    `json:"height"`
 	Weight          string    `json:"weight"`
 	LookingFor      string    `json:"lookingFor"`
+	Latitude        string    `json:"latitude"`
+	Longitude       string    `json:"longitude"`
 	Image           []byte    `json:"image"`
 }
 
@@ -67,6 +70,8 @@ type RequestUpdateProfile struct {
 	Height          string    `json:"height"`
 	Weight          string    `json:"weight"`
 	LookingFor      string    `json:"lookingFor"`
+	Latitude        string    `json:"latitude"`
+	Longitude       string    `json:"longitude"`
 	Image           []byte    `json:"image"`
 }
 
@@ -104,9 +109,14 @@ type ComplaintProfile struct {
 
 type QueryParamsProfileList struct {
 	pagination.Pagination
+	ProfileID    string `json:"profileId"`
 	AgeFrom      string `json:"ageFrom"`
 	AgeTo        string `json:"ageTo"`
 	SearchGender string `json:"searchGender"`
+}
+type QueryParamsGetProfileByTelegramID struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 type TelegramProfile struct {
@@ -119,6 +129,13 @@ type TelegramProfile struct {
 	LanguageCode    string `json:"languageCode"`
 	AllowsWriteToPm bool   `json:"allowsWriteToPm"`
 	QueryID         string `json:"queryId"`
+}
+
+type NavigatorProfile struct {
+	ID        uint64 `json:"id"`
+	ProfileID uint64 `json:"profileId"`
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 type ImageProfile struct {

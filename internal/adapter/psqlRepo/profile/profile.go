@@ -66,6 +66,26 @@ func (r *RepositoryProfile) Update(ctx context.Context, p *profile.Profile) (*pr
 	return p, nil
 }
 
+func (r *RepositoryProfile) UpdateLastOnline(ctx context.Context, profileID uint64) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateLastOnline, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profiles SET last_online=$1 WHERE id=$2"
+	_, err = r.db.ExecContext(ctx, query, time.Now(), profileID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateLastOnline, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
 func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -299,6 +319,63 @@ func (r *RepositoryProfile) FindTelegramById(ctx context.Context, profileID uint
 		&p.AllowsWriteToPm, &p.QueryID)
 	if err != nil {
 		r.logger.Debug("error func FindTelegramById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *RepositoryProfile) AddNavigator(
+	ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
+	query := "INSERT INTO profile_navigators (profile_id, latitude, longitude) VALUES ($1, $2, $3) RETURNING id"
+	err := r.db.QueryRowContext(ctx, query, p.ProfileID, p.Latitude, p.Longitude).Scan(&p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func AddNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *RepositoryProfile) UpdateNavigator(
+	ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateNavigator, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_navigators SET latitude=$1, longitude=$2 WHERE profile_id=$3"
+	_, err = r.db.ExecContext(ctx, query, p.Latitude, p.Longitude, &p.ProfileID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindNavigatorById(
+	ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
+	p := profile.NavigatorProfile{}
+	query := `SELECT id, profile_id, latitude, longitude
+			  FROM profile_navigators
+			  WHERE profile_id = $1`
+	row := r.db.QueryRowContext(ctx, query, profileID)
+	if row == nil {
+		err := errors.New("no rows found")
+		r.logger.Debug(
+			"error func FindNavigatorById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	err := row.Scan(&p.ID, &p.ProfileID, &p.Latitude, &p.Longitude)
+	if err != nil {
+		r.logger.Debug("error func FindNavigatorById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
