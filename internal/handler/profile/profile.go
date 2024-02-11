@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -191,15 +192,15 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), p.ID)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func AddProfileHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func AddProfileHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		n, err := h.uc.FindNavigatorById(ctf.Context(), p.ID)
+		n, err := h.uc.FindNavigatorByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func AddProfileHandler, method FindNavigatorById by path"+
+			h.logger.Debug("error func AddProfileHandler, method FindNavigatorByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -317,9 +318,9 @@ func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), id)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -367,9 +368,9 @@ func (h *HandlerProfile) GetProfileByIDHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), id)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func GetProfileByIDHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -417,15 +418,15 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), id)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), id)
 		if err != nil {
-			h.logger.Debug("error func GetProfileDetailHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func GetProfileDetailHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		n, err := h.uc.FindNavigatorById(ctf.Context(), p.ID)
+		n, err := h.uc.FindNavigatorByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileDetailHandler, method FindNavigatorById by path"+
+			h.logger.Debug("error func GetProfileDetailHandler, method FindNavigatorByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -670,9 +671,9 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), profileUpdated.ID)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), profileUpdated.ID)
 		if err != nil {
-			h.logger.Debug("error func UpdateProfileHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func UpdateProfileHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -712,15 +713,15 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err = h.uc.FindTelegramById(ctf.Context(), p.ID)
+		t, err = h.uc.FindTelegramByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func UpdateProfileHandler method FindTelegramById by path"+
+			h.logger.Debug("error func UpdateProfileHandler method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		n, err := h.uc.FindNavigatorById(ctf.Context(), p.ID)
+		n, err := h.uc.FindNavigatorByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func UpdateProfileHandler, method FindNavigatorById by path"+
+			h.logger.Debug("error func UpdateProfileHandler, method FindNavigatorByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -818,9 +819,9 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 				}
 			}
 		}
-		t, err := h.uc.FindTelegramById(ctf.Context(), profileInDB.ID)
+		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), profileInDB.ID)
 		if err != nil {
-			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -869,9 +870,9 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err = h.uc.FindTelegramById(ctf.Context(), profileInDB.ID)
+		t, err = h.uc.FindTelegramByProfileID(ctf.Context(), profileInDB.ID)
 		if err != nil {
-			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramById by path"+
+			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -966,4 +967,19 @@ func (h *HandlerProfile) DeleteProfileImageHandler() fiber.Handler {
 		}
 		return r.WrapCreated(ctf, response)
 	}
+}
+
+func (h *HandlerProfile) hsin(theta float64) float64 {
+	return math.Pow(math.Sin(theta/2), 2)
+}
+
+func (h *HandlerProfile) Distance(lat1, lon1, lat2, lon2 float64) float64 {
+	var la1, lo1, la2, lo2, r float64
+	la1 = lat1 * math.Pi / 180
+	lo1 = lon1 * math.Pi / 180
+	la2 = lat2 * math.Pi / 180
+	lo2 = lon2 * math.Pi / 180
+	r = 6378100
+	hs := h.hsin(la2-la1) + math.Cos(la1)*math.Cos(la2)*h.hsin(lo2-lo1)
+	return 2 * r * math.Asin(math.Sqrt(hs))
 }

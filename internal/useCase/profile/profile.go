@@ -18,10 +18,10 @@ type profileRepo interface {
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	DeleteTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
-	FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
+	FindTelegramByProfileID(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
 	AddNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
 	UpdateNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
-	FindNavigatorById(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error)
+	FindNavigatorByProfileID(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error)
 	DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	AddImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
@@ -209,10 +209,10 @@ func (u *UseCaseProfile) DeleteTelegram(
 	return response, nil
 }
 
-func (u *UseCaseProfile) FindTelegramById(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error) {
-	response, err := u.profileRepo.FindTelegramById(ctx, profileID)
+func (u *UseCaseProfile) FindTelegramByProfileID(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error) {
+	response, err := u.profileRepo.FindTelegramByProfileID(ctx, profileID)
 	if err != nil {
-		u.logger.Debug("error func FindTelegramById, method FindTelegramById by path "+
+		u.logger.Debug("error func FindTelegramByProfileID, method FindTelegramByProfileID by path "+
 			"internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
@@ -241,10 +241,11 @@ func (u *UseCaseProfile) UpdateNavigator(
 	return response, nil
 }
 
-func (u *UseCaseProfile) FindNavigatorById(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
-	response, err := u.profileRepo.FindNavigatorById(ctx, profileID)
+func (u *UseCaseProfile) FindNavigatorByProfileID(
+	ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
+	response, err := u.profileRepo.FindNavigatorByProfileID(ctx, profileID)
 	if err != nil {
-		u.logger.Debug("error func FindNavigatorById, method FindNavigatorById by path "+
+		u.logger.Debug("error func FindNavigatorByProfileID, method FindNavigatorByProfileID by path "+
 			"internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}

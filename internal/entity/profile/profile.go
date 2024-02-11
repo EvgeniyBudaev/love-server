@@ -84,9 +84,10 @@ type RequestDeleteProfileImage struct {
 }
 
 type ContentListProfile struct {
-	ID         uint64                `json:"id"`
-	LastOnline time.Time             `json:"lastOnline"`
-	Image      *ResponseImageProfile `json:"image"`
+	ID         uint64                    `json:"id"`
+	LastOnline time.Time                 `json:"lastOnline"`
+	Image      *ResponseImageProfile     `json:"image"`
+	Navigator  *ResponseNavigatorProfile `json:"navigator"`
 }
 
 type ResponseListProfile struct {
@@ -114,6 +115,7 @@ type QueryParamsProfileList struct {
 	AgeTo        string `json:"ageTo"`
 	SearchGender string `json:"searchGender"`
 }
+
 type QueryParamsGetProfileByTelegramID struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
@@ -158,4 +160,8 @@ type ResponseImageProfile struct {
 
 type ResponseTelegramProfile struct {
 	TelegramID uint64 `json:"telegramId"`
+}
+
+type ResponseNavigatorProfile struct {
+	Distance string `json:"distance"`
 }
