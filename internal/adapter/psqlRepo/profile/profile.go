@@ -4,12 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/EvgeniyBudaev/love-server/internal/entity/pagination"
 	"github.com/EvgeniyBudaev/love-server/internal/entity/profile"
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
 	"go.uber.org/zap"
-	"math"
 	"strconv"
 	"time"
 )
@@ -179,11 +177,16 @@ func (r *RepositoryProfile) SelectList(
 	birthYearEnd := time.Now().Year() - ageFromInt
 	birthdateFrom := time.Date(birthYearStart, time.January, 1, 0, 0, 0, 0, time.UTC)
 	birthdateTo := time.Date(birthYearEnd, time.December, 31, 23, 59, 59, 999999999, time.UTC)
-	query := "SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight," +
-		" looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at," +
-		" last_online FROM profiles" +
-		" WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2 AND ($3 = 'all' OR gender=$3) AND id <> $4"
-	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1 AND $2 AND ($3 = 'all' OR gender=$3) AND id <> $4"
+	query := "SELECT p.id, p.display_name, p.birthday, p.gender, p.search_gender, p.location, p.description," +
+		" p.height, p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance," +
+		" p.is_invisible, p.created_at, p.updated_at, p.last_online," +
+		" ST_Distance(pn.location::geography, ST_SetSRID(ST_MakePoint($5, $6),  4326)::geography) as distance" +
+		" FROM profiles p" +
+		" JOIN profile_navigators pn ON p.id = pn.profile_id" +
+		" WHERE p.is_deleted=false AND  p.is_blocked=false AND  p.birthday BETWEEN $1 AND $2" +
+		" AND ($3 = 'all' OR gender=$3) AND  p.id <> $4 ORDER BY distance ASC"
+	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1" +
+		" AND $2 AND ($3 = 'all' OR gender=$3) AND id <> $4"
 	limit := qp.Limit
 	page := qp.Page
 	// get totalItems
@@ -198,15 +201,7 @@ func (r *RepositoryProfile) SelectList(
 	// pagination
 	query = pagination.ApplyPagination(query, page, limit)
 	countQuery = pagination.ApplyPagination(countQuery, page, limit)
-	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, qp.ProfileID}
-	rows, err := r.db.QueryContext(ctx, query, queryParams...)
-	if err != nil {
-		r.logger.Debug(
-			"error func SelectList, method QueryContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	defer rows.Close()
+	// get navigator by profile id
 	profileID, err := strconv.ParseUint(qp.ProfileID, 10, 64)
 	if err != nil {
 		r.logger.Debug(
@@ -220,12 +215,22 @@ func (r *RepositoryProfile) SelectList(
 			" internal/handler/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
+	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, profileID,
+		navigatorByProfileIDParams.Location.Longitude, navigatorByProfileIDParams.Location.Latitude}
+	rows, err := r.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		r.logger.Debug("error func SelectList, method QueryContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
 	list := make([]*profile.ContentListProfile, 0)
 	for rows.Next() {
 		p := profile.Profile{}
+		n := &profile.ResponseNavigatorProfile{}
 		err := rows.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
 			&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
-			&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+			&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline, &n.Distance)
 		if err != nil {
 			r.logger.Debug("error func SelectList, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 				zap.Error(err))
@@ -237,48 +242,11 @@ func (r *RepositoryProfile) SelectList(
 				" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 			continue
 		}
-		navigatorItem, err := r.FindNavigatorByProfileID(ctx, p.ID)
-		if err != nil {
-			r.logger.Debug("error func SelectList, method FindNavigatorByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return nil, err
-		}
-		nlat, err := strconv.ParseFloat(navigatorByProfileIDParams.Latitude, 64)
-		if err != nil {
-			r.logger.Debug(
-				"error func SelectList, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return nil, err
-		}
-		nlon, err := strconv.ParseFloat(navigatorByProfileIDParams.Longitude, 64)
-		if err != nil {
-			r.logger.Debug(
-				"error func SelectList, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return nil, err
-		}
-		nilat, err := strconv.ParseFloat(navigatorItem.Latitude, 64)
-		if err != nil {
-			r.logger.Debug(
-				"error func SelectList, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return nil, err
-		}
-		nilon, err := strconv.ParseFloat(navigatorItem.Longitude, 64)
-		if err != nil {
-			r.logger.Debug(
-				"error func SelectList, method ParseUint height by path internal/handler/profile/profile.go",
-				zap.Error(err))
-			return nil, err
-		}
-		navigator := &profile.ResponseNavigatorProfile{
-			Distance: r.Distance(nlat, nlon, nilat, nilon),
-		}
 		lp := profile.ContentListProfile{
 			ID:         p.ID,
 			LastOnline: p.LastOnline,
 			Image:      nil,
-			Navigator:  navigator,
+			Navigator:  n,
 		}
 		if len(images) > 0 {
 			i := profile.ResponseImageProfile{
@@ -294,23 +262,6 @@ func (r *RepositoryProfile) SelectList(
 		Content:    list,
 	}
 	return &response, nil
-}
-
-func (r *RepositoryProfile) hsin(theta float64) float64 {
-	return math.Pow(math.Sin(theta/2), 2)
-}
-
-func (r *RepositoryProfile) Distance(lat1, lon1, lat2, lon2 float64) string {
-	var la1, lo1, la2, lo2, rad float64
-	la1 = lat1 * math.Pi / 180
-	lo1 = lon1 * math.Pi / 180
-	la2 = lat2 * math.Pi / 180
-	lo2 = lon2 * math.Pi / 180
-	rad = 6378100
-	hs := r.hsin(la2-la1) + math.Cos(la1)*math.Cos(la2)*r.hsin(lo2-lo1)
-	distance := 2 * rad * math.Asin(math.Sqrt(hs))
-	roundedDistance := math.Ceil(distance)
-	return fmt.Sprintf("%.2f", roundedDistance)
 }
 
 func (r *RepositoryProfile) AddTelegram(
@@ -399,8 +350,8 @@ func (r *RepositoryProfile) FindTelegramByProfileID(
 
 func (r *RepositoryProfile) AddNavigator(
 	ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
-	query := "INSERT INTO profile_navigators (profile_id, latitude, longitude) VALUES ($1, $2, $3) RETURNING id"
-	err := r.db.QueryRowContext(ctx, query, p.ProfileID, p.Latitude, p.Longitude).Scan(&p.ID)
+	query := `INSERT INTO profile_navigators (profile_id, location) VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3),  4326)) RETURNING id`
+	err := r.db.QueryRowContext(ctx, query, p.ProfileID, p.Location.Longitude, p.Location.Latitude).Scan(&p.ID)
 	if err != nil {
 		r.logger.Debug(
 			"error func AddNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
@@ -412,29 +363,32 @@ func (r *RepositoryProfile) AddNavigator(
 
 func (r *RepositoryProfile) UpdateNavigator(
 	ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		r.logger.Debug("error func UpdateNavigator, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	defer tx.Rollback()
-	query := "UPDATE profile_navigators SET latitude=$1, longitude=$2 WHERE profile_id=$3"
-	_, err = r.db.ExecContext(ctx, query, p.Latitude, p.Longitude, &p.ProfileID)
-	if err != nil {
-		r.logger.Debug(
-			"error func UpdateNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	tx.Commit()
-	return p, nil
+	//tx, err := r.db.Begin()
+	//if err != nil {
+	//	r.logger.Debug("error func UpdateNavigator, method Begin by path internal/adapter/psqlRepo/profile/profile.go",
+	//		zap.Error(err))
+	//	return nil, err
+	//}
+	//defer tx.Rollback()
+	//query := "UPDATE profile_navigators SET latitude=$1, longitude=$2 WHERE profile_id=$3"
+	//_, err = r.db.ExecContext(ctx, query, p.Latitude, p.Longitude, &p.ProfileID)
+	//if err != nil {
+	//	r.logger.Debug(
+	//		"error func UpdateNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
+	//		zap.Error(err))
+	//	return nil, err
+	//}
+	//tx.Commit()
+	//return p, nil
+	return nil, nil
 }
 
 func (r *RepositoryProfile) FindNavigatorByProfileID(
 	ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
 	p := profile.NavigatorProfile{}
-	query := `SELECT id, profile_id, latitude, longitude
+	var longitude sql.NullFloat64
+	var latitude sql.NullFloat64
+	query := `SELECT id, profile_id, ST_X(location) as longitude, ST_Y(location) as latitude
 			  FROM profile_navigators
 			  WHERE profile_id = $1`
 	row := r.db.QueryRowContext(ctx, query, profileID)
@@ -445,11 +399,18 @@ func (r *RepositoryProfile) FindNavigatorByProfileID(
 			zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.ProfileID, &p.Latitude, &p.Longitude)
+	err := row.Scan(&p.ID, &p.ProfileID, &longitude, &latitude)
 	if err != nil {
 		r.logger.Debug("error func FindNavigatorById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
 		return nil, err
+	}
+	if !longitude.Valid && !latitude.Valid {
+		return nil, err
+	}
+	p.Location = &profile.Point{
+		Latitude:  latitude.Float64,
+		Longitude: longitude.Float64,
 	}
 	return &p, nil
 }

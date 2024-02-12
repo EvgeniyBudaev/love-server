@@ -174,10 +174,27 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
+		latitude, err := strconv.ParseFloat(req.Latitude, 64)
+		if err != nil {
+			h.logger.Debug(
+				"error func AddProfileHandler, method ParseFloat height by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		longitude, err := strconv.ParseFloat(req.Longitude, 64)
+		if err != nil {
+			h.logger.Debug(
+				"error func AddProfileHandler, method ParseFloat height by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		point := &profile.Point{
+			Latitude:  latitude,
+			Longitude: longitude,
+		}
 		navigatorDto := &profile.NavigatorProfile{
 			ProfileID: newProfile.ID,
-			Latitude:  req.Latitude,
-			Longitude: req.Longitude,
+			Location:  point,
 		}
 		_, err = h.uc.AddNavigator(ctf.Context(), navigatorDto)
 		if err != nil {
@@ -302,8 +319,8 @@ func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
 		if latitude != "" && longitude != "" {
 			navigatorDto := &profile.NavigatorProfile{
 				ProfileID: id,
-				Latitude:  latitude,
-				Longitude: longitude,
+				//Latitude:  latitude,
+				//Longitude: longitude,
 			}
 			_, err := h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
 			if err != nil {
@@ -697,8 +714,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 		}
 		navigatorDto := &profile.NavigatorProfile{
 			ProfileID: profileUpdated.ID,
-			Latitude:  req.Latitude,
-			Longitude: req.Longitude,
+			//Latitude:  req.Latitude,
+			//Longitude: req.Longitude,
 		}
 		_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
 		if err != nil {

@@ -18,4 +18,4 @@ CREATE TABLE profiles
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     last_online TIMESTAMP NOT NULL
-)
+);

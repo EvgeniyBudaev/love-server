@@ -102,3 +102,12 @@ Errors
 ```
 go get -u github.com/pkg/errors
 ```
+
+PostGIS
+```
+pg_config --version // PostgreSQL 14.10 (Ubuntu 14.10-0ubuntu0.22.04.1)
+sudo apt-get update
+sudo apt install postgis postgresql-14-postgis-3
+sudo -u postgres psql -c "CREATE EXTENSION postgis;" tgbot
+sudo systemctl restart postgresql
+```

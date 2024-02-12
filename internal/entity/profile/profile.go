@@ -133,11 +133,15 @@ type TelegramProfile struct {
 	QueryID         string `json:"queryId"`
 }
 
+type Point struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
 type NavigatorProfile struct {
 	ID        uint64 `json:"id"`
 	ProfileID uint64 `json:"profileId"`
-	Latitude  string `json:"latitude"`
-	Longitude string `json:"longitude"`
+	Location  *Point `json:"location"`
 }
 
 type ImageProfile struct {
