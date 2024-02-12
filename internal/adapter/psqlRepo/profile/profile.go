@@ -177,14 +177,28 @@ func (r *RepositoryProfile) SelectList(
 	birthYearEnd := time.Now().Year() - ageFromInt
 	birthdateFrom := time.Date(birthYearStart, time.January, 1, 0, 0, 0, 0, time.UTC)
 	birthdateTo := time.Date(birthYearEnd, time.December, 31, 23, 59, 59, 999999999, time.UTC)
+	// Convert qp.Distance from kilometers to meters
+	distanceMeters, err := strconv.ParseFloat(qp.Distance, 64)
+	if err != nil {
+		r.logger.Debug("error func SelectList, method ParseFloat by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	distanceMeters *= 1000 // Convert kilometers to meters
 	query := "SELECT p.id, p.display_name, p.birthday, p.gender, p.search_gender, p.location, p.description," +
 		" p.height, p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance," +
 		" p.is_invisible, p.created_at, p.updated_at, p.last_online," +
-		" ST_Distance(pn.location::geography, ST_SetSRID(ST_MakePoint($5, $6),  4326)::geography) as distance" +
+		" ST_Distance((SELECT location FROM profile_navigators WHERE profile_id = p.id)::geography, " +
+		" ST_SetSRID(ST_MakePoint((SELECT ST_X(location) FROM profile_navigators WHERE profile_id = $4), " +
+		" (SELECT ST_Y(location) FROM profile_navigators WHERE profile_id = $4)),  4326)::geography) as distance" +
 		" FROM profiles p" +
 		" JOIN profile_navigators pn ON p.id = pn.profile_id" +
 		" WHERE p.is_deleted=false AND  p.is_blocked=false AND  p.birthday BETWEEN $1 AND $2" +
-		" AND ($3 = 'all' OR gender=$3) AND  p.id <> $4 ORDER BY distance ASC"
+		" AND ($3 = 'all' OR gender=$3) AND  p.id <> $4 AND" +
+		" ST_Distance((SELECT location FROM profile_navigators WHERE profile_id = p.id)::geography, " +
+		" ST_SetSRID(ST_MakePoint((SELECT ST_X(location) FROM profile_navigators WHERE profile_id = $4), " +
+		" (SELECT ST_Y(location) FROM profile_navigators WHERE profile_id = $4)), 4326)::geography) <= $5" +
+		" ORDER BY distance ASC, p.last_online DESC"
 	countQuery := "SELECT COUNT(*) FROM profiles WHERE is_deleted=false AND is_blocked=false AND birthday BETWEEN $1" +
 		" AND $2 AND ($3 = 'all' OR gender=$3) AND id <> $4"
 	limit := qp.Limit
@@ -193,9 +207,8 @@ func (r *RepositoryProfile) SelectList(
 	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery, birthdateFrom, birthdateTo, qp.SearchGender,
 		qp.ProfileID)
 	if err != nil {
-		r.logger.Debug(
-			"error func SelectList, method GetTotalItems by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func SelectList, method GetTotalItems by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	// pagination
@@ -204,19 +217,11 @@ func (r *RepositoryProfile) SelectList(
 	// get navigator by profile id
 	profileID, err := strconv.ParseUint(qp.ProfileID, 10, 64)
 	if err != nil {
-		r.logger.Debug(
-			"error func SelectList, method ParseUint by path internal/handler/profile/profile.go",
-			zap.Error(err))
-		return nil, err
-	}
-	navigatorByProfileIDParams, err := r.FindNavigatorByProfileID(ctx, profileID)
-	if err != nil {
-		r.logger.Debug("error func SelectList, method FindNavigatorByProfileID by path"+
+		r.logger.Debug("error func SelectList, method ParseUint by path"+
 			" internal/handler/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
-	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, profileID,
-		navigatorByProfileIDParams.Location.Longitude, navigatorByProfileIDParams.Location.Latitude}
+	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, profileID, distanceMeters}
 	rows, err := r.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		r.logger.Debug("error func SelectList, method QueryContext by path"+
