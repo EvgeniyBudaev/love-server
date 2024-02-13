@@ -111,3 +111,26 @@ sudo apt install postgis postgresql-14-postgis-3
 sudo -u postgres psql -c "CREATE EXTENSION postgis;" tgbot
 sudo systemctl restart postgresql
 ```
+
+JWT
+https://github.com/auth0/go-jwt-middleware
+https://github.com/form3tech-oss/jwt-go
+https://github.com/golang-jwt/jwt
+```
+go get -u github.com/auth0/go-jwt-middleware
+go get -u github.com/form3tech-oss/jwt-go
+go get -u github.com/golang-jwt/jwt/v5
+go get -u github.com/gofiber/contrib/jwt
+```
+
+Golang Keycloak API Package
+https://github.com/Nerzal/gocloak
+```
+go get -u github.com/Nerzal/gocloak/v13
+```
+
+Go Util
+https://github.com/gookit/goutil
+```
+go get -u github.com/gookit/goutil
+```

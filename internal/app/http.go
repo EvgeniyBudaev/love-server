@@ -2,8 +2,12 @@ package app
 
 import (
 	profileRepo "github.com/EvgeniyBudaev/love-server/internal/adapter/psqlRepo/profile"
-	"github.com/EvgeniyBudaev/love-server/internal/handler/profile"
+	identityEntity "github.com/EvgeniyBudaev/love-server/internal/entity/identity"
+	profileHandler "github.com/EvgeniyBudaev/love-server/internal/handler/profile"
+	userHandler "github.com/EvgeniyBudaev/love-server/internal/handler/user"
+	"github.com/EvgeniyBudaev/love-server/internal/middlewares"
 	profileUseCase "github.com/EvgeniyBudaev/love-server/internal/useCase/profile"
+	userUseCase "github.com/EvgeniyBudaev/love-server/internal/useCase/user"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"time"
@@ -64,18 +68,15 @@ func (app *App) StartHTTPServer() error {
 	//}
 
 	app.fiber.Static("/static", "./static")
+	im := identityEntity.NewIdentity(app.config, app.Logger)
 	pr := profileRepo.NewRepositoryProfile(app.Logger, app.db.psql)
+	imc := userUseCase.NewUseCaseUser(app.Logger, im)
 	puc := profileUseCase.NewUseCaseProfile(app.Logger, pr)
-	ph := profile.NewHandlerProfile(app.Logger, puc)
+	imh := userHandler.NewHandlerUser(app.Logger, imc)
+	ph := profileHandler.NewHandlerProfile(app.Logger, puc)
 	grp := app.fiber.Group(prefix)
-	grp.Post("/profile/add", ph.AddProfileHandler())
-	grp.Post("/profile/edit", ph.UpdateProfileHandler())
-	grp.Post("/profile/delete", ph.DeleteProfileHandler())
-	grp.Get("/profile/list", ph.GetProfileListHandler())
-	grp.Get("/profile/telegram/:id", ph.GetProfileByTelegramIDHandler())
-	grp.Get("/profile/:id", ph.GetProfileByIDHandler())
-	grp.Get("/profile/detail/:id", ph.GetProfileDetailHandler())
-	grp.Post("/profile/image/delete", ph.DeleteProfileImageHandler())
+	middlewares.InitFiberMiddlewares(
+		app.fiber, app.config, app.Logger, grp, imh, ph, InitPublicRoutes, InitProtectedRoutes)
 	if err := app.fiber.Listen(app.config.Port); err != nil {
 		app.Logger.Fatal("error func StartHTTPServer, method Listen by path internal/app/http.go", zap.Error(err))
 	}
