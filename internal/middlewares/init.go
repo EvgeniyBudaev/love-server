@@ -32,7 +32,7 @@ func InitFiberMiddlewares(app *fiber.App,
 	// routes that don't require a JWT token
 	initPublicRoutes(grp, imh, ph)
 	tokenRetrospector := identity.NewIdentity(cfg, l)
-	app.Use(NewJwtMiddleware(cfg, tokenRetrospector))
+	app.Use(NewJwtMiddleware(cfg, tokenRetrospector, l))
 	// routes that require authentication/authorization
 	initProtectedRoutes(grp, ph)
 }
