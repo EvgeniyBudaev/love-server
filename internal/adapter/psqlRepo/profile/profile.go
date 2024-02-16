@@ -26,11 +26,11 @@ func NewRepositoryProfile(logger logger.Logger, db *sql.DB) *RepositoryProfile {
 
 func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	birthday := p.Birthday.Format("2006-01-02")
-	query := "INSERT INTO profiles (display_name, birthday, gender, search_gender, location, description, height," +
-		" weight, looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at," +
-		" updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15," +
-		" $16, $17) RETURNING id"
-	err := r.db.QueryRowContext(ctx, query, p.DisplayName, birthday, p.Gender, p.SearchGender, p.Location,
+	query := "INSERT INTO profiles (user_id, display_name, birthday, gender, search_gender, location, description," +
+		" height, weight, looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible," +
+		" created_at, updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14," +
+		" $15, $16, $17, $18) RETURNING id"
+	err := r.db.QueryRowContext(ctx, query, p.UserID, p.DisplayName, birthday, p.Gender, p.SearchGender, p.Location,
 		p.Description, p.Height, p.Weight, p.LookingFor, p.IsDeleted, p.IsBlocked, p.IsPremium, p.IsShowDistance,
 		p.IsInvisible, p.CreatedAt, p.UpdatedAt, p.LastOnline).Scan(&p.ID)
 	if err != nil {
@@ -112,7 +112,7 @@ func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*pr
 
 func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT id, display_name, birthday, gender, search_gender, location, description, height, weight,
+	query := `SELECT id, user_id, display_name, birthday, gender, search_gender, location, description, height, weight,
        looking_for, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at,
        last_online
 			  FROM profiles
@@ -125,9 +125,9 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 			zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
-		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
-		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location,
+		&p.Description, &p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
+		&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
 		r.logger.Debug("error func FindById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
@@ -138,9 +138,9 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 
 func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT p.id, p.display_name, p.birthday, p.gender, p.search_gender, p.location, p.description, p.height,
-       p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance, p.is_invisible,
-       p.created_at, p.updated_at,  p.last_online
+	query := `SELECT p.id, p.user_id, p.display_name, p.birthday, p.gender, p.search_gender, p.location,
+       p.description, p.height, p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance,
+       p.is_invisible, p.created_at, p.updated_at,  p.last_online
 			  FROM profiles p
 			  JOIN profile_telegram pt ON p.id = pt.profile_id
 			  WHERE pt.telegram_id = $1`
@@ -152,9 +152,9 @@ func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uin
 			zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
-		&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
-		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
+	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location,
+		&p.Description, &p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
+		&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
 		r.logger.Debug("error func FindByTelegramId, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
@@ -185,9 +185,9 @@ func (r *RepositoryProfile) SelectList(
 		return nil, err
 	}
 	distanceMeters *= 1000 // Convert kilometers to meters
-	query := "SELECT p.id, p.display_name, p.birthday, p.gender, p.search_gender, p.location, p.description," +
-		" p.height, p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance," +
-		" p.is_invisible, p.created_at, p.updated_at, p.last_online," +
+	query := "SELECT p.id, p.user_id, p.display_name, p.birthday, p.gender, p.search_gender, p.location," +
+		" p.description, p.height, p.weight, p.looking_for, p.is_deleted, p.is_blocked, p.is_premium," +
+		" p.is_show_distance, p.is_invisible, p.created_at, p.updated_at, p.last_online," +
 		" ST_Distance((SELECT location FROM profile_navigators WHERE profile_id = p.id)::geography, " +
 		" ST_SetSRID(ST_MakePoint((SELECT ST_X(location) FROM profile_navigators WHERE profile_id = $4), " +
 		" (SELECT ST_Y(location) FROM profile_navigators WHERE profile_id = $4)),  4326)::geography) as distance" +
@@ -233,9 +233,9 @@ func (r *RepositoryProfile) SelectList(
 	for rows.Next() {
 		p := profile.Profile{}
 		n := &profile.ResponseNavigatorProfile{}
-		err := rows.Scan(&p.ID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location, &p.Description,
-			&p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
-			&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline, &n.Distance)
+		err := rows.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.SearchGender, &p.Location,
+			&p.Description, &p.Height, &p.Weight, &p.LookingFor, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
+			&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline, &n.Distance)
 		if err != nil {
 			r.logger.Debug("error func SelectList, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 				zap.Error(err))

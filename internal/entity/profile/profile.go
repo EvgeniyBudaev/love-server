@@ -7,6 +7,7 @@ import (
 
 type Profile struct {
 	ID             uint64              `json:"id"`
+	UserID         string              `json:"userId"`
 	DisplayName    string              `json:"displayName"`
 	Birthday       time.Time           `json:"birthday"`
 	Gender         string              `json:"gender"`
@@ -31,6 +32,7 @@ type Profile struct {
 }
 
 type RequestAddProfile struct {
+	UserID          string    `json:"userId"`
 	TelegramID      string    `json:"telegramId"`
 	UserName        string    `json:"username"`
 	Firstname       string    `json:"firstName"`

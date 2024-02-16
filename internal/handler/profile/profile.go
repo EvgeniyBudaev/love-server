@@ -102,6 +102,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			weight = int(weightUint64)
 		}
 		profileDto := &profile.Profile{
+			UserID:         req.UserID,
 			DisplayName:    req.DisplayName,
 			Birthday:       req.Birthday,
 			Gender:         req.Gender,
@@ -229,6 +230,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
+			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -268,7 +270,7 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 		profileID, err := strconv.ParseUint(params.ProfileID, 10, 64)
 		if err != nil {
 			h.logger.Debug(
-				"error func AddProfileHandler, method ParseUint by path internal/handler/profile/profile.go",
+				"error func GetProfileListHandler, method ParseUint by path internal/handler/profile/profile.go",
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -455,6 +457,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
+			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -584,6 +587,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			}
 			profileDto = &profile.Profile{
 				ID:             profileID,
+				UserID:         profileInDB.UserID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -606,6 +610,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 		} else {
 			profileDto = &profile.Profile{
 				ID:             profileID,
+				UserID:         profileInDB.UserID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -750,6 +755,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
+			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -862,6 +868,7 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 		}
 		profileDto := &profile.Profile{
 			ID:             profileID,
+			UserID:         "",
 			DisplayName:    "",
 			Birthday:       profileInDB.Birthday,
 			Gender:         "",
@@ -903,6 +910,7 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
+			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -991,12 +999,12 @@ func (h *HandlerProfile) hsin(theta float64) float64 {
 }
 
 func (h *HandlerProfile) Distance(lat1, lon1, lat2, lon2 float64) float64 {
-	var la1, lo1, la2, lo2, r float64
+	var la1, lo1, la2, lo2, rad float64
 	la1 = lat1 * math.Pi / 180
 	lo1 = lon1 * math.Pi / 180
 	la2 = lat2 * math.Pi / 180
 	lo2 = lon2 * math.Pi / 180
-	r = 6378100
+	rad = 6378100
 	hs := h.hsin(la2-la1) + math.Cos(la1)*math.Cos(la2)*h.hsin(lo2-lo1)
-	return 2 * r * math.Asin(math.Sqrt(hs))
+	return 2 * rad * math.Asin(math.Sqrt(hs))
 }
