@@ -11,12 +11,10 @@ type Profile struct {
 	DisplayName    string              `json:"displayName"`
 	Birthday       time.Time           `json:"birthday"`
 	Gender         string              `json:"gender"`
-	SearchGender   string              `json:"searchGender"`
 	Location       string              `json:"location"`
-	Description    string              `json:"description"`
 	Height         uint8               `json:"height"`
 	Weight         uint8               `json:"weight"`
-	LookingFor     string              `json:"lookingFor"`
+	Description    string              `json:"description"`
 	IsDeleted      bool                `json:"isDeleted"`
 	IsBlocked      bool                `json:"isBlocked"`
 	IsPremium      bool                `json:"isPremium"`
@@ -29,6 +27,7 @@ type Profile struct {
 	Complaints     []*ComplaintProfile `json:"complaints"`
 	Telegram       *TelegramProfile    `json:"telegram"`
 	Navigator      *NavigatorProfile   `json:"navigator"`
+	Filter         *FilterProfile      `json:"filters"`
 }
 
 type RequestAddProfile struct {
@@ -51,6 +50,11 @@ type RequestAddProfile struct {
 	LookingFor      string    `json:"lookingFor"`
 	Latitude        string    `json:"latitude"`
 	Longitude       string    `json:"longitude"`
+	AgeFrom         string    `json:"ageFrom"`
+	AgeTo           string    `json:"ageTo"`
+	Distance        string    `json:"distance"`
+	Page            string    `json:"page"`
+	Size            string    `json:"size"`
 	Image           []byte    `json:"image"`
 }
 
@@ -98,10 +102,11 @@ type ResponseListProfile struct {
 }
 
 type ResponseProfile struct {
-	ID           uint64                   `json:"id"`
-	SearchGender string                   `json:"searchGender"`
-	Image        *ResponseImageProfile    `json:"image"`
-	Telegram     *ResponseTelegramProfile `json:"telegram"`
+	ID       uint64                   `json:"id"`
+	UserID   string                   `json:"userId"`
+	Image    *ResponseImageProfile    `json:"image"`
+	Telegram *ResponseTelegramProfile `json:"telegram"`
+	Filter   *ResponseFilterProfile   `json:"filter"`
 }
 
 type ComplaintProfile struct {
@@ -120,6 +125,22 @@ type QueryParamsProfileList struct {
 }
 
 type QueryParamsGetProfileByTelegramID struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
+
+type QueryParamsGetProfileByUserID struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
+
+type QueryParamsGetProfileByID struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
+
+type QueryParamsGetProfileDetail struct {
+	ViewerID  string `json:"viewerId"`
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
 }
@@ -147,6 +168,18 @@ type NavigatorProfile struct {
 	Location  *Point `json:"location"`
 }
 
+type FilterProfile struct {
+	ID           uint64 `json:"id"`
+	ProfileID    uint64 `json:"profileId"`
+	SearchGender string `json:"searchGender"`
+	LookingFor   string `json:"lookingFor"`
+	AgeFrom      uint32 `json:"ageFrom"`
+	AgeTo        uint32 `json:"ageTo"`
+	Distance     uint32 `json:"distance"`
+	Page         uint32 `json:"page"`
+	Size         uint32 `json:"size"`
+}
+
 type ImageProfile struct {
 	ID        uint64    `json:"id"`
 	ProfileID uint64    `json:"profileId"`
@@ -169,6 +202,42 @@ type ResponseTelegramProfile struct {
 	TelegramID uint64 `json:"telegramId"`
 }
 
+type ResponseFilterProfile struct {
+	ID           uint64 `json:"id"`
+	SearchGender string `json:"searchGender"`
+	LookingFor   string `json:"lookingFor"`
+	AgeFrom      uint32 `json:"ageFrom"`
+	AgeTo        uint32 `json:"ageTo"`
+	Distance     uint32 `json:"distance"`
+	Page         uint32 `json:"page"`
+	Size         uint32 `json:"size"`
+}
+
 type ResponseNavigatorProfile struct {
-	Distance string `json:"distance"`
+	Distance float64 `json:"distance"`
+}
+
+type Profile2 struct {
+	ID             uint64                    `json:"id"`
+	UserID         string                    `json:"userId"`
+	DisplayName    string                    `json:"displayName"`
+	Birthday       time.Time                 `json:"birthday"`
+	Gender         string                    `json:"gender"`
+	Location       string                    `json:"location"`
+	Height         uint8                     `json:"height"`
+	Weight         uint8                     `json:"weight"`
+	Description    string                    `json:"description"`
+	IsDeleted      bool                      `json:"isDeleted"`
+	IsBlocked      bool                      `json:"isBlocked"`
+	IsPremium      bool                      `json:"isPremium"`
+	IsShowDistance bool                      `json:"isShowDistance"`
+	IsInvisible    bool                      `json:"isInvisible"`
+	CreatedAt      time.Time                 `json:"createdAt"`
+	UpdatedAt      time.Time                 `json:"updatedAt"`
+	LastOnline     time.Time                 `json:"lastOnline"`
+	Images         []*ImageProfile           `json:"images"`
+	Complaints     []*ComplaintProfile       `json:"complaints"`
+	Telegram       *TelegramProfile          `json:"telegram"`
+	Navigator      *ResponseNavigatorProfile `json:"navigator"`
+	Filter         *FilterProfile            `json:"filters"`
 }

@@ -59,6 +59,7 @@ sudo rm migrate.list
 Создание миграционного репозитория
 ```
 migrate create -ext sql -dir migrations ProfilesCreationMigration
+migrate create -ext sql -dir migrations ProfileFiltersCreationMigration
 migrate create -ext sql -dir migrations ProfileComplaintsCreationMigration
 migrate create -ext sql -dir migrations ProfileTelegramCreationMigration
 migrate create -ext sql -dir migrations ProfileNavigatorsCreationMigration

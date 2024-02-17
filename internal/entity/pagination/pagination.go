@@ -10,7 +10,7 @@ type Pagination struct {
 	HasNext     bool   `json:"hasNext"`
 	HasPrevious bool   `json:"hasPrevious"`
 	CountPages  uint64 `json:"countPages"`
-	Limit       uint64 `json:"limit"`
+	Size        uint64 `json:"size"`
 	Page        uint64 `json:"page"`
 	TotalItems  uint64 `json:"totalItems"`
 }
@@ -20,15 +20,15 @@ func NewPagination(pag *Pagination) *Pagination {
 		HasNext:     pag.HasNext,
 		HasPrevious: pag.HasPrevious,
 		CountPages:  pag.CountPages,
-		Limit:       pag.Limit,
+		Size:        pag.Size,
 		Page:        pag.Page,
 		TotalItems:  pag.TotalItems,
 	}
 }
 
-func ApplyPagination(sqlQuery string, page uint64, limit uint64) string {
-	offset := (page - 1) * limit
-	sqlQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+func ApplyPagination(sqlQuery string, page uint64, size uint64) string {
+	offset := (page - 1) * size
+	sqlQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", size, offset)
 	return sqlQuery
 }
 
@@ -41,19 +41,19 @@ func GetTotalItems(ctx context.Context, db *sql.DB, sqlQuery string, args ...int
 	return totalItems, nil
 }
 
-func getCountPages(limit uint64, totalItems uint64) uint64 {
-	return (totalItems + limit - 1) / limit
+func getCountPages(size uint64, totalItems uint64) uint64 {
+	return (totalItems + size - 1) / size
 }
 
-func GetPagination(limit uint64, page uint64, totalItems uint64) *Pagination {
+func GetPagination(size uint64, page uint64, totalItems uint64) *Pagination {
 	hasPrevious := page > 1
-	hasNext := (page * limit) < totalItems
-	constPages := getCountPages(limit, totalItems)
+	hasNext := (page * size) < totalItems
+	constPages := getCountPages(size, totalItems)
 	paging := NewPagination(&Pagination{
 		HasNext:     hasNext,
 		HasPrevious: hasPrevious,
 		CountPages:  constPages,
-		Limit:       limit,
+		Size:        size,
 		Page:        page,
 		TotalItems:  totalItems,
 	})

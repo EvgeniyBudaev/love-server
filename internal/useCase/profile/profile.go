@@ -14,6 +14,7 @@ type profileRepo interface {
 	Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
+	FindByKeycloakID(ctx context.Context, userID string) (*profile.Profile, error)
 	FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
@@ -21,7 +22,14 @@ type profileRepo interface {
 	FindTelegramByProfileID(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error)
 	AddNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
 	UpdateNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
+	DeleteNavigator(ctx context.Context, p *profile.NavigatorProfile) (*profile.NavigatorProfile, error)
 	FindNavigatorByProfileID(ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error)
+	FindNavigatorByProfileIDAndViewerID(
+		ctx context.Context, profileID uint64, viewerID uint64) (*profile.ResponseNavigatorProfile, error)
+	AddFilter(ctx context.Context, p *profile.FilterProfile) (*profile.FilterProfile, error)
+	UpdateFilter(ctx context.Context, p *profile.FilterProfile) (*profile.FilterProfile, error)
+	DeleteFilter(ctx context.Context, p *profile.FilterProfile) (*profile.FilterProfile, error)
+	FindFilterByProfileID(ctx context.Context, profileID uint64) (*profile.FilterProfile, error)
 	DeleteImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	AddImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
 	UpdateImage(ctx context.Context, p *profile.ImageProfile) (*profile.ImageProfile, error)
@@ -95,6 +103,16 @@ func (u *UseCaseProfile) FindById(ctx context.Context, id uint64) (*profile.Prof
 	response, err := u.profileRepo.FindById(ctx, id)
 	if err != nil {
 		u.logger.Debug("error func FindById, method FindById by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindByKeycloakID(ctx context.Context, userID string) (*profile.Profile, error) {
+	response, err := u.profileRepo.FindByKeycloakID(ctx, userID)
+	if err != nil {
+		u.logger.Debug("error func FindByKeycloakID, method FindById by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
@@ -209,7 +227,8 @@ func (u *UseCaseProfile) DeleteTelegram(
 	return response, nil
 }
 
-func (u *UseCaseProfile) FindTelegramByProfileID(ctx context.Context, profileID uint64) (*profile.TelegramProfile, error) {
+func (u *UseCaseProfile) FindTelegramByProfileID(
+	ctx context.Context, profileID uint64) (*profile.TelegramProfile, error) {
 	response, err := u.profileRepo.FindTelegramByProfileID(ctx, profileID)
 	if err != nil {
 		u.logger.Debug("error func FindTelegramByProfileID, method FindTelegramByProfileID by path "+
@@ -241,11 +260,76 @@ func (u *UseCaseProfile) UpdateNavigator(
 	return response, nil
 }
 
+func (u *UseCaseProfile) DeleteNavigator(
+	ctx context.Context, n *profile.NavigatorProfile) (*profile.NavigatorProfile, error) {
+	response, err := u.profileRepo.DeleteNavigator(ctx, n)
+	if err != nil {
+		u.logger.Debug("error func DeleteNavigator, method DeleteNavigator by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
 func (u *UseCaseProfile) FindNavigatorByProfileID(
 	ctx context.Context, profileID uint64) (*profile.NavigatorProfile, error) {
 	response, err := u.profileRepo.FindNavigatorByProfileID(ctx, profileID)
 	if err != nil {
 		u.logger.Debug("error func FindNavigatorByProfileID, method FindNavigatorByProfileID by path "+
+			"internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindNavigatorByProfileIDAndViewerID(
+	ctx context.Context, profileID uint64, viewerID uint64) (*profile.ResponseNavigatorProfile, error) {
+	response, err := u.profileRepo.FindNavigatorByProfileIDAndViewerID(ctx, profileID, viewerID)
+	if err != nil {
+		u.logger.Debug("error func FindNavigatorByProfileIDAndViewerId, method FindNavigatorByProfileIDAndViewerId"+
+			" by path internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) AddFilter(
+	ctx context.Context, t *profile.FilterProfile) (*profile.FilterProfile, error) {
+	response, err := u.profileRepo.AddFilter(ctx, t)
+	if err != nil {
+		u.logger.Debug("error func AddFilter, method AddFilter by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) UpdateFilter(
+	ctx context.Context, t *profile.FilterProfile) (*profile.FilterProfile, error) {
+	response, err := u.profileRepo.UpdateFilter(ctx, t)
+	if err != nil {
+		u.logger.Debug("error func UpdateFilter, method UpdateFilter by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) DeleteFilter(
+	ctx context.Context, t *profile.FilterProfile) (*profile.FilterProfile, error) {
+	response, err := u.profileRepo.DeleteFilter(ctx, t)
+	if err != nil {
+		u.logger.Debug("error func DeleteFilter, method DeleteFilter by path internal/useCase/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindFilterByProfileID(ctx context.Context, profileID uint64) (*profile.FilterProfile, error) {
+	response, err := u.profileRepo.FindFilterByProfileID(ctx, profileID)
+	if err != nil {
+		u.logger.Debug("error func FindFilterByProfileID, method FindFilterByProfileID by path "+
 			"internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
