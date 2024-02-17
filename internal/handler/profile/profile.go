@@ -174,7 +174,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		ageFrom := 0
-		if req.Height != "" {
+		if req.AgeFrom != "" {
 			ageFromUint32, err := strconv.ParseUint(req.AgeFrom, 10, 32)
 			if err != nil {
 				h.logger.Debug(
@@ -185,7 +185,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			ageFrom = int(ageFromUint32)
 		}
 		ageTo := 0
-		if req.Height != "" {
+		if req.AgeTo != "" {
 			ageToUint32, err := strconv.ParseUint(req.AgeTo, 10, 32)
 			if err != nil {
 				h.logger.Debug(
@@ -196,8 +196,8 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			ageTo = int(ageToUint32)
 		}
 		distance := 0
-		if req.Height != "" {
-			distance32, err := strconv.ParseUint(req.Distance, 10, 32)
+		if req.Distance != "" {
+			distance32, err := strconv.ParseUint(req.Distance, 10, 64)
 			if err != nil {
 				h.logger.Debug(
 					"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
@@ -207,8 +207,8 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			distance = int(distance32)
 		}
 		page := 0
-		if req.Height != "" {
-			page32, err := strconv.ParseUint(req.Page, 10, 32)
+		if req.Page != "" {
+			page32, err := strconv.ParseUint(req.Page, 10, 64)
 			if err != nil {
 				h.logger.Debug(
 					"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
@@ -218,8 +218,8 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			page = int(page32)
 		}
 		size := 0
-		if req.Height != "" {
-			size32, err := strconv.ParseUint(req.Size, 10, 32)
+		if req.Size != "" {
+			size32, err := strconv.ParseUint(req.Size, 10, 64)
 			if err != nil {
 				h.logger.Debug(
 					"error func AddProfileHandler, method ParseUint height by path internal/handler/profile/profile.go",
@@ -234,9 +234,9 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			LookingFor:   req.LookingFor,
 			AgeFrom:      uint32(ageFrom),
 			AgeTo:        uint32(ageTo),
-			Distance:     uint32(distance),
-			Page:         uint32(page),
-			Size:         uint32(size),
+			Distance:     uint64(distance),
+			Page:         uint64(page),
+			Size:         uint64(size),
 		}
 		_, err = h.uc.AddFilter(ctf.Context(), filterDto)
 		if err != nil {
@@ -292,12 +292,6 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		n, err := h.uc.FindNavigatorByProfileID(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func AddProfileHandler, method FindNavigatorByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
 		i, err := h.uc.SelectListPublicImage(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func AddProfileHandler, method SelectListPublicImage by path"+
@@ -324,7 +318,6 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			LastOnline:     p.LastOnline,
 			Images:         i,
 			Telegram:       t,
-			Navigator:      n,
 			Filter:         f,
 		}
 		return r.WrapCreated(ctf, response)
@@ -346,6 +339,63 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 		if err != nil {
 			h.logger.Debug(
 				"error func GetProfileListHandler, method ParseUint by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		f, err := h.uc.FindFilterByProfileID(ctf.Context(), profileID)
+		if err != nil {
+			h.logger.Debug(
+				"error func GetProfileListHandler, method FindFilterByProfileID by path internal/handler/profile/profile.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		ageFrom := 0
+		if params.AgeFrom != "" {
+			ageFromUint32, err := strconv.ParseUint(params.AgeFrom, 10, 32)
+			if err != nil {
+				h.logger.Debug(
+					"error func GetProfileListHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			ageFrom = int(ageFromUint32)
+		}
+		ageTo := 0
+		if params.AgeTo != "" {
+			ageToUint32, err := strconv.ParseUint(params.AgeTo, 10, 32)
+			if err != nil {
+				h.logger.Debug(
+					"error func GetProfileListHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			ageTo = int(ageToUint32)
+		}
+		distance := 0
+		if params.Distance != "" {
+			distance32, err := strconv.ParseUint(params.Distance, 10, 64)
+			if err != nil {
+				h.logger.Debug(
+					"error func GetProfileListHandler, method ParseUint height by path internal/handler/profile/profile.go",
+					zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			distance = int(distance32)
+		}
+		filterDto := &profile.FilterProfile{
+			ID:           f.ID,
+			ProfileID:    profileID,
+			SearchGender: params.SearchGender,
+			AgeFrom:      uint32(ageFrom),
+			AgeTo:        uint32(ageTo),
+			Distance:     uint64(distance),
+			Page:         params.Page,
+			Size:         params.Size,
+		}
+		_, err = h.uc.UpdateFilter(ctf.Context(), filterDto)
+		if err != nil {
+			h.logger.Debug(
+				"error func UpdateProfileHandler, method UpdateFilter by path internal/handler/profile/profile.go",
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -758,7 +808,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		response := &profile.Profile2{
+		response := &profile.Profile{
 			ID:             p.ID,
 			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
@@ -1082,12 +1132,6 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		n, err := h.uc.FindNavigatorByProfileID(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func UpdateProfileHandler, method FindNavigatorByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
 		i, err := h.uc.SelectListPublicImage(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func UpdateProfileHandler, method SelectListPublicImage by path"+
@@ -1114,7 +1158,6 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			LastOnline:     p.LastOnline,
 			Images:         i,
 			Telegram:       t,
-			Navigator:      n,
 			Filter:         f,
 		}
 		return r.WrapCreated(ctf, response)
@@ -1276,12 +1319,6 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 				zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		t, err = h.uc.FindTelegramByProfileID(ctf.Context(), profileInDB.ID)
-		if err != nil {
-			h.logger.Debug("error func DeleteProfileHandler, method FindTelegramByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
 		p, err := h.uc.FindById(ctf.Context(), profileID)
 		if err := ctf.BodyParser(&req); err != nil {
 			h.logger.Debug(
@@ -1309,9 +1346,9 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 			UpdatedAt:      p.UpdatedAt,
 			LastOnline:     p.LastOnline,
 			Images:         nil,
-			Telegram:       t,
-			Navigator:      n,
-			Filter:         f,
+			Telegram:       nil,
+			Navigator:      nil,
+			Filter:         nil,
 		}
 		return r.WrapCreated(ctf, response)
 	}

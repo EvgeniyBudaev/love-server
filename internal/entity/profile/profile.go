@@ -6,28 +6,28 @@ import (
 )
 
 type Profile struct {
-	ID             uint64              `json:"id"`
-	UserID         string              `json:"userId"`
-	DisplayName    string              `json:"displayName"`
-	Birthday       time.Time           `json:"birthday"`
-	Gender         string              `json:"gender"`
-	Location       string              `json:"location"`
-	Height         uint8               `json:"height"`
-	Weight         uint8               `json:"weight"`
-	Description    string              `json:"description"`
-	IsDeleted      bool                `json:"isDeleted"`
-	IsBlocked      bool                `json:"isBlocked"`
-	IsPremium      bool                `json:"isPremium"`
-	IsShowDistance bool                `json:"isShowDistance"`
-	IsInvisible    bool                `json:"isInvisible"`
-	CreatedAt      time.Time           `json:"createdAt"`
-	UpdatedAt      time.Time           `json:"updatedAt"`
-	LastOnline     time.Time           `json:"lastOnline"`
-	Images         []*ImageProfile     `json:"images"`
-	Complaints     []*ComplaintProfile `json:"complaints"`
-	Telegram       *TelegramProfile    `json:"telegram"`
-	Navigator      *NavigatorProfile   `json:"navigator"`
-	Filter         *FilterProfile      `json:"filters"`
+	ID             uint64                    `json:"id"`
+	UserID         string                    `json:"userId"`
+	DisplayName    string                    `json:"displayName"`
+	Birthday       time.Time                 `json:"birthday"`
+	Gender         string                    `json:"gender"`
+	Location       string                    `json:"location"`
+	Height         uint8                     `json:"height"`
+	Weight         uint8                     `json:"weight"`
+	Description    string                    `json:"description"`
+	IsDeleted      bool                      `json:"isDeleted"`
+	IsBlocked      bool                      `json:"isBlocked"`
+	IsPremium      bool                      `json:"isPremium"`
+	IsShowDistance bool                      `json:"isShowDistance"`
+	IsInvisible    bool                      `json:"isInvisible"`
+	CreatedAt      time.Time                 `json:"createdAt"`
+	UpdatedAt      time.Time                 `json:"updatedAt"`
+	LastOnline     time.Time                 `json:"lastOnline"`
+	Images         []*ImageProfile           `json:"images"`
+	Complaints     []*ComplaintProfile       `json:"complaints"`
+	Telegram       *TelegramProfile          `json:"telegram"`
+	Navigator      *ResponseNavigatorProfile `json:"navigator"`
+	Filter         *FilterProfile            `json:"filters"`
 }
 
 type RequestAddProfile struct {
@@ -175,9 +175,9 @@ type FilterProfile struct {
 	LookingFor   string `json:"lookingFor"`
 	AgeFrom      uint32 `json:"ageFrom"`
 	AgeTo        uint32 `json:"ageTo"`
-	Distance     uint32 `json:"distance"`
-	Page         uint32 `json:"page"`
-	Size         uint32 `json:"size"`
+	Distance     uint64 `json:"distance"`
+	Page         uint64 `json:"page"`
+	Size         uint64 `json:"size"`
 }
 
 type ImageProfile struct {
@@ -208,36 +208,11 @@ type ResponseFilterProfile struct {
 	LookingFor   string `json:"lookingFor"`
 	AgeFrom      uint32 `json:"ageFrom"`
 	AgeTo        uint32 `json:"ageTo"`
-	Distance     uint32 `json:"distance"`
-	Page         uint32 `json:"page"`
-	Size         uint32 `json:"size"`
+	Distance     uint64 `json:"distance"`
+	Page         uint64 `json:"page"`
+	Size         uint64 `json:"size"`
 }
 
 type ResponseNavigatorProfile struct {
 	Distance float64 `json:"distance"`
-}
-
-type Profile2 struct {
-	ID             uint64                    `json:"id"`
-	UserID         string                    `json:"userId"`
-	DisplayName    string                    `json:"displayName"`
-	Birthday       time.Time                 `json:"birthday"`
-	Gender         string                    `json:"gender"`
-	Location       string                    `json:"location"`
-	Height         uint8                     `json:"height"`
-	Weight         uint8                     `json:"weight"`
-	Description    string                    `json:"description"`
-	IsDeleted      bool                      `json:"isDeleted"`
-	IsBlocked      bool                      `json:"isBlocked"`
-	IsPremium      bool                      `json:"isPremium"`
-	IsShowDistance bool                      `json:"isShowDistance"`
-	IsInvisible    bool                      `json:"isInvisible"`
-	CreatedAt      time.Time                 `json:"createdAt"`
-	UpdatedAt      time.Time                 `json:"updatedAt"`
-	LastOnline     time.Time                 `json:"lastOnline"`
-	Images         []*ImageProfile           `json:"images"`
-	Complaints     []*ComplaintProfile       `json:"complaints"`
-	Telegram       *TelegramProfile          `json:"telegram"`
-	Navigator      *ResponseNavigatorProfile `json:"navigator"`
-	Filter         *FilterProfile            `json:"filters"`
 }
