@@ -18,6 +18,19 @@ type RegisterRequest struct {
 	MobileNumber string `json:"mobileNumber"`
 }
 
+type RequestUpdateUser struct {
+	ID           *string `json:"id"`
+	Username     string  `json:"username"`
+	FirstName    string  `json:"firstName"`
+	LastName     string  `json:"lastName"`
+	Email        string  `json:"email"`
+	MobileNumber string  `json:"mobileNumber"`
+}
+
+type RequestDeleteUser struct {
+	ID *string `json:"id"`
+}
+
 type QueryParamsUserList struct {
 	searching.Searching
 }
@@ -53,6 +66,42 @@ func (uc *UseCaseUser) Register(ctx context.Context, request RegisterRequest) (*
 		return nil, err
 	}
 	return response, nil
+}
+
+func (uc *UseCaseUser) UpdateUser(ctx context.Context, request RequestUpdateUser) (*gocloak.User, error) {
+	var user = gocloak.User{
+		ID:            request.ID,
+		Username:      gocloak.StringP(request.Username),
+		FirstName:     gocloak.StringP(request.FirstName),
+		LastName:      gocloak.StringP(request.LastName),
+		Email:         gocloak.StringP(request.Email),
+		EmailVerified: gocloak.BoolP(true),
+		Enabled:       gocloak.BoolP(true),
+		Attributes:    &map[string][]string{},
+	}
+	if strings.TrimSpace(request.MobileNumber) != "" {
+		(*user.Attributes)["mobileNumber"] = []string{request.MobileNumber}
+	}
+	response, err := uc.identity.UpdateUser(ctx, user)
+	if err != nil {
+		uc.logger.Debug("error func UpdateUser, method UpdateUser by path internal/useCase/user/user.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (uc *UseCaseUser) DeleteUser(ctx context.Context, request RequestDeleteUser) error {
+	var user = gocloak.User{
+		ID: request.ID,
+	}
+	err := uc.identity.DeleteUser(ctx, user)
+	if err != nil {
+		uc.logger.Debug("error func DeleteUser, method DeleteUser by path internal/useCase/user/user.go",
+			zap.Error(err))
+		return err
+	}
+	return nil
 }
 
 func (uc *UseCaseUser) GetUserList(ctx context.Context, query QueryParamsUserList) ([]*gocloak.User, error) {

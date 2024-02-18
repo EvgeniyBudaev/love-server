@@ -94,10 +94,10 @@ func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*pr
 		return nil, err
 	}
 	defer tx.Rollback()
-	query := "UPDATE profiles SET display_name=$1, birthday=$2, gender=$3, location=$4," +
-		" description=$5, height=$6, weight=7, is_deleted=$8, is_blocked=$9, is_premium=$10," +
-		" is_show_distance=$11, is_invisible=$12, updated_at=$13, last_online=$14 WHERE id=$15"
-	_, err = r.db.ExecContext(ctx, query, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+	query := "UPDATE profiles SET user_id=$1, display_name=$2, birthday=$3, gender=$4, location=$5," +
+		" description=$6, height=$7, weight=$8, is_deleted=$9, is_blocked=$10, is_premium=$11," +
+		" is_show_distance=$12, is_invisible=$13, updated_at=$14, last_online=$15 WHERE id=$16"
+	_, err = r.db.ExecContext(ctx, query, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.UpdatedAt, &p.LastOnline, &p.ID)
 	if err != nil {

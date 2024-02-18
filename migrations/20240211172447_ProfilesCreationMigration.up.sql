@@ -1,12 +1,12 @@
 CREATE TABLE profiles
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
-    user_id VARCHAR NOT NULL UNIQUE,
-    display_name VARCHAR NOT NULL,
-    birthday DATE NOT NULL,
+    user_id VARCHAR,
+    display_name VARCHAR,
+    birthday DATE,
     gender VARCHAR,
-    location VARCHAR NOT NULL,
-    description VARCHAR NOT NULL,
+    location VARCHAR,
+    description VARCHAR,
     height INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     is_deleted BOOL NOT NULL,

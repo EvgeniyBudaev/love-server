@@ -88,6 +88,52 @@ func (i *Identity) CreateUser(ctx context.Context, user gocloak.User, password s
 	return userKeycloak, nil
 }
 
+func (i *Identity) UpdateUser(ctx context.Context, user gocloak.User) (*gocloak.User, error) {
+	token, err := i.loginRestApiClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client := gocloak.NewClient(i.BaseUrl)
+	isUniqueMobileNumber, err := i.validateMobileNumbers(ctx, (*user.Attributes)["mobileNumber"], token, client)
+	if err != nil {
+		i.logger.Debug("error get users for validation mobile number is invalid by path"+
+			" entity/identity/identity.go", zap.Error(err))
+		return nil, errors.Wrap(err, "get users for validation mobile number is invalid")
+	}
+	if !isUniqueMobileNumber {
+		i.logger.Debug("error mobile number must be unique by path entity/identity/identity.go", zap.Error(err))
+		return nil, errors.New("mobile number must be unique")
+	}
+	err = client.UpdateUser(ctx, token.AccessToken, i.Realm, user)
+	if err != nil {
+		i.logger.Debug("error unable to update the user by path entity/identity/identity.go", zap.Error(err))
+		return nil, errors.Wrap(err, "unable to update the user")
+	}
+	if user.ID == nil {
+		return nil, errors.New("user ID is nil")
+	}
+	userKeycloak, err := client.GetUserByID(ctx, token.AccessToken, i.Realm, *user.ID)
+	if err != nil {
+		i.logger.Debug("error unable to get recently created user by path entity/identity/identity.go", zap.Error(err))
+		return nil, errors.Wrap(err, "unable to get recently created user")
+	}
+	return userKeycloak, nil
+}
+
+func (i *Identity) DeleteUser(ctx context.Context, user gocloak.User) error {
+	token, err := i.loginRestApiClient(ctx)
+	if err != nil {
+		return nil
+	}
+	client := gocloak.NewClient(i.BaseUrl)
+	err = client.DeleteUser(ctx, token.AccessToken, i.Realm, *user.ID)
+	if err != nil {
+		i.logger.Debug("error unable to delete the user by path entity/identity/identity.go", zap.Error(err))
+		return errors.Wrap(err, "unable to delete the user")
+	}
+	return nil
+}
+
 func (i *Identity) RetrospectToken(ctx context.Context, accessToken string) (*gocloak.IntroSpectTokenResult, error) {
 	client := gocloak.NewClient(i.BaseUrl)
 	rptResult, err := client.RetrospectToken(ctx, accessToken, i.ClientId, i.ClientSecret, i.Realm)

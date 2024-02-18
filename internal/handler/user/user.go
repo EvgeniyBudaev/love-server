@@ -40,6 +40,48 @@ func (h *HandlerUser) PostRegisterHandler() fiber.Handler {
 	}
 }
 
+func (h *HandlerUser) UpdateUserHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		var ctx = ctf.UserContext()
+		h.logger.Info("POST /api/v1/user/update")
+		var request = user.RequestUpdateUser{}
+		err := ctf.BodyParser(&request)
+		if err != nil {
+			h.logger.Debug("error func UpdateUserHandle, method BodyParser by path internal/handler/user/user.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		response, err := h.uc.UpdateUser(ctx, request)
+		if err != nil {
+			h.logger.Debug("error func UpdateUserHandle, method UpdateUser by path internal/handler/user/user.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, response)
+	}
+}
+
+func (h *HandlerUser) DeleteUserHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		var ctx = ctf.UserContext()
+		h.logger.Info("POST /api/v1/user/delete")
+		var request = user.RequestDeleteUser{}
+		err := ctf.BodyParser(&request)
+		if err != nil {
+			h.logger.Debug("error func DeleteUserHandler, method BodyParser by path internal/handler/user/user.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.DeleteUser(ctx, request)
+		if err != nil {
+			h.logger.Debug("error func DeleteUserHandler, method DeleteUser by path internal/handler/user/user.go",
+				zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, nil)
+	}
+}
+
 func (h *HandlerUser) GetUserListHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		var ctx = ctf.UserContext()
