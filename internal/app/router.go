@@ -20,6 +20,12 @@ func InitPublicRoutes(grp fiber.Router, imh *user.HandlerUser, ph *profile.Handl
 	grp.Post("/profile/edit", ph.UpdateProfileHandler())
 	grp.Post("/profile/delete", ph.DeleteProfileHandler())
 	grp.Post("/profile/image/delete", ph.DeleteProfileImageHandler())
+
+	grp.Post("/review/add", ph.AddReviewHandler())
+	grp.Post("/review/update", ph.UpdateReviewHandler())
+	grp.Post("/review/delete", ph.DeleteReviewHandler())
+	grp.Post("/review/:id", ph.GetReviewByIDHandler())
+	grp.Post("/review/list", ph.GetReviewListHandler())
 }
 
 func InitProtectedRoutes(grp fiber.Router, ph *profile.HandlerProfile) {

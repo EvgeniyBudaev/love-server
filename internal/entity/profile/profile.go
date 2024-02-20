@@ -173,8 +173,8 @@ type FilterProfile struct {
 	ProfileID    uint64 `json:"profileId"`
 	SearchGender string `json:"searchGender"`
 	LookingFor   string `json:"lookingFor"`
-	AgeFrom      uint32 `json:"ageFrom"`
-	AgeTo        uint32 `json:"ageTo"`
+	AgeFrom      uint8  `json:"ageFrom"`
+	AgeTo        uint8  `json:"ageTo"`
 	Distance     uint64 `json:"distance"`
 	Page         uint64 `json:"page"`
 	Size         uint64 `json:"size"`
@@ -206,8 +206,8 @@ type ResponseFilterProfile struct {
 	ID           uint64 `json:"id"`
 	SearchGender string `json:"searchGender"`
 	LookingFor   string `json:"lookingFor"`
-	AgeFrom      uint32 `json:"ageFrom"`
-	AgeTo        uint32 `json:"ageTo"`
+	AgeFrom      uint8  `json:"ageFrom"`
+	AgeTo        uint8  `json:"ageTo"`
 	Distance     uint64 `json:"distance"`
 	Page         uint64 `json:"page"`
 	Size         uint64 `json:"size"`
@@ -215,4 +215,53 @@ type ResponseFilterProfile struct {
 
 type ResponseNavigatorProfile struct {
 	Distance float64 `json:"distance"`
+}
+
+type ReviewProfile struct {
+	ID         uint64    `json:"id"`
+	ProfileID  uint64    `json:"profileId"`
+	Message    string    `json:"message"`
+	Rating     uint8     `json:"rating"`
+	HasDeleted bool      `json:"hasDeleted"`
+	HasEdited  bool      `json:"hasEdited"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+type QueryParamsReviewList struct {
+	pagination.Pagination
+}
+
+type ContentReviewProfile struct {
+	ID          uint64    `json:"id"`
+	ProfileID   uint64    `json:"profileId"`
+	Message     string    `json:"message"`
+	Rating      uint8     `json:"rating"`
+	HasDeleted  bool      `json:"hasDeleted"`
+	HasEdited   bool      `json:"hasEdited"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	DisplayName string    `json:"displayName"`
+}
+
+type ResponseListReview struct {
+	*pagination.Pagination
+	Content []*ContentReviewProfile `json:"content"`
+}
+
+type RequestAddReview struct {
+	ProfileID string `json:"profileId"`
+	Message   string `json:"message"`
+	Rating    string `json:"rating"`
+}
+
+type RequestUpdateReview struct {
+	ID        string `json:"id"`
+	ProfileID string `json:"profileId"`
+	Message   string `json:"message"`
+	Rating    string `json:"rating"`
+}
+
+type RequestDeleteReview struct {
+	ID string `json:"id"`
 }

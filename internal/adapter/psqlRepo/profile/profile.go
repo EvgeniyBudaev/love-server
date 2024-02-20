@@ -34,9 +34,8 @@ func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profi
 		&p.Description, &p.Height, &p.Weight, p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline).Scan(&p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func Add, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func Add, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	return p, nil
@@ -57,9 +56,8 @@ func (r *RepositoryProfile) Update(ctx context.Context, p *profile.Profile) (*pr
 		&p.Description, &p.Height, &p.Weight, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.UpdatedAt, &p.LastOnline, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func Update, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func Update, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -77,9 +75,8 @@ func (r *RepositoryProfile) UpdateLastOnline(ctx context.Context, profileID uint
 	query := "UPDATE profiles SET last_online=$1 WHERE id=$2"
 	_, err = r.db.ExecContext(ctx, query, time.Now(), profileID)
 	if err != nil {
-		r.logger.Debug(
-			"error func UpdateLastOnline, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func UpdateLastOnline, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return err
 	}
 	tx.Commit()
@@ -101,9 +98,8 @@ func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*pr
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.UpdatedAt, &p.LastOnline, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func Delete, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func Delete, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -119,9 +115,8 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 	row := r.db.QueryRowContext(ctx, query, id)
 	if row == nil {
 		err := errors.New("no rows found")
-		r.logger.Debug(
-			"error func FindById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func FindById, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
@@ -171,9 +166,8 @@ func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uin
 	row := r.db.QueryRowContext(ctx, query, telegramID)
 	if row == nil {
 		err := errors.New("no rows found")
-		r.logger.Debug(
-			"error func FindByTelegramId, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func FindByTelegramId, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
@@ -743,4 +737,133 @@ func (r *RepositoryProfile) CheckIfCommonImageExists(
 		return false, 0, err
 	}
 	return true, imageID, nil
+}
+
+func (r *RepositoryProfile) AddReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	query := "INSERT INTO profile_reviews (profile_id, message, rating, has_deleted, has_edited," +
+		" created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+	err := r.db.QueryRowContext(ctx, query, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt).Scan(&p.ID)
+	if err != nil {
+		r.logger.Debug("error func AddReview, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *RepositoryProfile) UpdateReview(
+	ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateReview, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_reviews SET profile_id=$1, message=$2, rating=$3, has_deleted=$4," +
+		" has_edited=$5, created_at=$6, updated_at=$7 WHERE id=$8 AND has_deleted=false"
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateReview, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) DeleteReview(
+	ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug(
+			"error func DeleteReview, method Begin by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := "UPDATE profile_reviews SET profile_id=$1, message=$2, rating=$3, has_deleted=$4," +
+		" has_edited=$5, created_at=$6, updated_at=$7 WHERE id=$8 AND has_deleted=false"
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt, &p.ID)
+	if err != nil {
+		r.logger.Debug("error func DeleteReview, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error) {
+	p := profile.ReviewProfile{}
+	query := `SELECT id, profile_id, message, rating, has_deleted, has_edited, created_at, updated_at
+			  FROM profile_reviews
+			  WHERE id = $1`
+	row := r.db.QueryRowContext(ctx, query, id)
+	if row == nil {
+		err := errors.New("no rows found")
+		r.logger.Debug("error func FindReviewById, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	err := row.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		r.logger.Debug("error func FindReviewById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *RepositoryProfile) SelectReviewList(
+	ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error) {
+	query := `SELECT pr.id, pr.profile_id, pr.message, pr.rating, pr.has_deleted, pr.has_edited, pr.created_at,
+                pr.updated_at, p.display_name
+              FROM profile_reviews pr
+              JOIN profiles p ON pr.profile_id = p.id
+              WHERE has_deleted=false`
+	countQuery := `SELECT COUNT(*) FROM profile_reviews pr
+                     JOIN profiles p ON pr.profile_id = p.id
+                     WHERE pr.has_deleted=false`
+	size := qp.Size
+	page := qp.Page
+	// get totalItems
+	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery)
+	if err != nil {
+		r.logger.Debug("error func SelectReviewList, method GetTotalItems by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	// pagination
+	query = pagination.ApplyPagination(query, page, size)
+	countQuery = pagination.ApplyPagination(countQuery, page, size)
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		r.logger.Debug("error func SelectReviewList, method QueryContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+	list := make([]*profile.ContentReviewProfile, 0)
+	for rows.Next() {
+		p := profile.ContentReviewProfile{}
+		err := rows.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted, &p.HasEdited, &p.CreatedAt,
+			&p.UpdatedAt, &p.DisplayName)
+		if err != nil {
+			r.logger.Debug("error func SelectReviewList, method Scan by path"+
+				" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+			continue
+		}
+		list = append(list, &p)
+	}
+	paging := pagination.GetPagination(size, page, totalItems)
+	response := profile.ResponseListReview{
+		Pagination: paging,
+		Content:    list,
+	}
+	return &response, nil
 }

@@ -6,7 +6,7 @@ CREATE TABLE profiles
     birthday DATE,
     gender VARCHAR,
     location VARCHAR,
-    description VARCHAR,
+    description TEXT,
     height INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     is_deleted BOOL NOT NULL,

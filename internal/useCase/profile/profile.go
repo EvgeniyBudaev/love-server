@@ -37,6 +37,11 @@ type profileRepo interface {
 	SelectListPublicImage(ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error)
 	SelectListImage(ctx context.Context, profileID uint64) ([]*profile.ImageProfile, error)
 	CheckIfCommonImageExists(ctx context.Context, profileID uint64, fileName string) (bool, uint64, error)
+	AddReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
+	UpdateReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
+	DeleteReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
+	FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error)
+	SelectReviewList(ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error)
 }
 
 type UseCaseProfile struct {
@@ -331,6 +336,57 @@ func (u *UseCaseProfile) FindFilterByProfileID(ctx context.Context, profileID ui
 	if err != nil {
 		u.logger.Debug("error func FindFilterByProfileID, method FindFilterByProfileID by path "+
 			"internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) AddReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	response, err := u.profileRepo.AddReview(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func AddReview, method AddReview by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) UpdateReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	response, err := u.profileRepo.UpdateReview(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func UpdateReview, method UpdateReview by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) DeleteReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error) {
+	response, err := u.profileRepo.DeleteReview(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func DeleteReview, method DeleteReview by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error) {
+	response, err := u.profileRepo.FindReviewById(ctx, id)
+	if err != nil {
+		u.logger.Debug("error func FindReviewById, method FindReviewById by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) SelectReviewList(
+	ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error) {
+	response, err := u.profileRepo.SelectReviewList(ctx, qp)
+	if err != nil {
+		u.logger.Debug("error func SelectReviewList, method SelectReviewList by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	return response, nil
