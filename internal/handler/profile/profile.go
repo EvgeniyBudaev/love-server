@@ -1380,7 +1380,7 @@ func (h *HandlerProfile) AddReviewHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		rating, err := strconv.ParseUint(req.ProfileID, 10, 8)
+		rating, err := strconv.ParseFloat(req.Rating, 32)
 		if err != nil {
 			h.logger.Debug("error func AddReviewHandler, method ParseUint roomIdStr by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -1389,7 +1389,7 @@ func (h *HandlerProfile) AddReviewHandler() fiber.Handler {
 		reviewDto := &profile.ReviewProfile{
 			ProfileID:  profileID,
 			Message:    req.Message,
-			Rating:     uint8(rating),
+			Rating:     float32(rating),
 			HasDeleted: false,
 			HasEdited:  false,
 			CreatedAt:  time.Now(),
@@ -1437,7 +1437,7 @@ func (h *HandlerProfile) UpdateReviewHandler() fiber.Handler {
 			err = errorDomain.NewCustomError(msg, http.StatusNotFound)
 			return r.WrapError(ctf, err, http.StatusNotFound)
 		}
-		rating, err := strconv.ParseUint(req.ProfileID, 10, 8)
+		rating, err := strconv.ParseFloat(req.Rating, 32)
 		if err != nil {
 			h.logger.Debug("error func UpdateReviewHandler, method ParseUint roomIdStr by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -1447,7 +1447,7 @@ func (h *HandlerProfile) UpdateReviewHandler() fiber.Handler {
 			ID:         reviewID,
 			ProfileID:  profileID,
 			Message:    req.Message,
-			Rating:     uint8(rating),
+			Rating:     float32(rating),
 			HasDeleted: reviewInDB.HasDeleted,
 			HasEdited:  true,
 			CreatedAt:  reviewInDB.CreatedAt,
@@ -1491,7 +1491,13 @@ func (h *HandlerProfile) DeleteReviewHandler() fiber.Handler {
 		}
 		reviewDto := &profile.ReviewProfile{
 			ID:         reviewID,
+			ProfileID:  reviewInDB.ProfileID,
+			Message:    reviewInDB.Message,
+			Rating:     reviewInDB.Rating,
 			HasDeleted: true,
+			HasEdited:  reviewInDB.HasEdited,
+			CreatedAt:  reviewInDB.CreatedAt,
+			UpdatedAt:  time.Now(),
 		}
 		review, err := h.uc.DeleteReview(ctf.Context(), reviewDto)
 		if err != nil {
@@ -1505,7 +1511,7 @@ func (h *HandlerProfile) DeleteReviewHandler() fiber.Handler {
 
 func (h *HandlerProfile) GetReviewByIDHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("GET /api/v1/review/:id")
+		h.logger.Info("GET /api/v1/review/detail/:id")
 		idStr := ctf.Params("id")
 		id, err := strconv.ParseUint(idStr, 10, 64)
 		if err != nil {

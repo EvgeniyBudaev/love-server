@@ -40,7 +40,7 @@ type profileRepo interface {
 	AddReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
 	UpdateReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
 	DeleteReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
-	FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error)
+	FindReviewById(ctx context.Context, id uint64) (*profile.ResponseReviewProfile, error)
 	SelectReviewList(ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error)
 }
 
@@ -371,7 +371,7 @@ func (u *UseCaseProfile) DeleteReview(ctx context.Context, p *profile.ReviewProf
 	return response, nil
 }
 
-func (u *UseCaseProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error) {
+func (u *UseCaseProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ResponseReviewProfile, error) {
 	response, err := u.profileRepo.FindReviewById(ctx, id)
 	if err != nil {
 		u.logger.Debug("error func FindReviewById, method FindReviewById by path"+

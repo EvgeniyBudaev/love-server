@@ -8,6 +8,7 @@ import (
 	"github.com/EvgeniyBudaev/love-server/internal/entity/profile"
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
 	"go.uber.org/zap"
+	"math"
 	"strconv"
 	"time"
 )
@@ -797,11 +798,13 @@ func (r *RepositoryProfile) DeleteReview(
 	return p, nil
 }
 
-func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ReviewProfile, error) {
-	p := profile.ReviewProfile{}
-	query := `SELECT id, profile_id, message, rating, has_deleted, has_edited, created_at, updated_at
-			  FROM profile_reviews
-			  WHERE id = $1`
+func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ResponseReviewProfile, error) {
+	p := profile.ResponseReviewProfile{}
+	query := `SELECT pr.id, pr.profile_id, pr.message, pr.rating, pr.has_deleted, pr.has_edited, pr.created_at,
+       pr.updated_at, p.user_id
+			  FROM profile_reviews pr
+              JOIN profiles p ON pr.profile_id = p.id
+			  WHERE pr.id = $1`
 	row := r.db.QueryRowContext(ctx, query, id)
 	if row == nil {
 		err := errors.New("no rows found")
@@ -810,7 +813,7 @@ func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*pro
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
-		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt)
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt, &p.UserID)
 	if err != nil {
 		r.logger.Debug("error func FindReviewById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
@@ -822,13 +825,46 @@ func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*pro
 func (r *RepositoryProfile) SelectReviewList(
 	ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error) {
 	query := `SELECT pr.id, pr.profile_id, pr.message, pr.rating, pr.has_deleted, pr.has_edited, pr.created_at,
-                pr.updated_at, p.display_name
+                pr.updated_at, p.display_name, p.user_id
               FROM profile_reviews pr
               JOIN profiles p ON pr.profile_id = p.id
-              WHERE has_deleted=false`
+              WHERE has_deleted=false
+              ORDER BY pr.created_at DESC`
+	// Query to get number of reviews
 	countQuery := `SELECT COUNT(*) FROM profile_reviews pr
-                     JOIN profiles p ON pr.profile_id = p.id
                      WHERE pr.has_deleted=false`
+	// Query to get number of reviews on current date by profile id
+	countReviewsOnCurrentDateByProfileID := `
+					SELECT COUNT(*)
+					FROM profile_reviews pr
+                    WHERE pr.profile_id=$1 AND pr.created_at::date = CURRENT_DATE`
+	profileID, err := strconv.ParseUint(qp.ProfileID, 10, 64)
+	if err != nil {
+		r.logger.Debug("error func SelectReviewList, method ParseUint by path"+
+			" internal/handler/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	var count uint
+	err = r.db.QueryRowContext(ctx, countReviewsOnCurrentDateByProfileID, profileID).Scan(&count)
+	if err != nil {
+		r.logger.Debug("error func SelectReviewList, method QueryRowContext for avgRating by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	// Query to get average rating
+	avgRatingQuery := `SELECT COALESCE(AVG(pr.rating),  0) as avg_rating
+                      FROM profile_reviews pr
+                      JOIN profiles p ON pr.profile_id = p.id
+                      WHERE pr.has_deleted=false`
+	var avgRating float32
+	err = r.db.QueryRowContext(ctx, avgRatingQuery).Scan(&avgRating)
+	if err != nil {
+		r.logger.Debug("error func SelectReviewList, method QueryRowContext for avgRating by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	// Rounding the average rating to the nearest multiple of 0.5
+	roundedAvgRating := float32(math.Round(float64(avgRating)*2)) / 2
 	size := qp.Size
 	page := qp.Page
 	// get totalItems
@@ -852,7 +888,7 @@ func (r *RepositoryProfile) SelectReviewList(
 	for rows.Next() {
 		p := profile.ContentReviewProfile{}
 		err := rows.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted, &p.HasEdited, &p.CreatedAt,
-			&p.UpdatedAt, &p.DisplayName)
+			&p.UpdatedAt, &p.DisplayName, &p.UserID)
 		if err != nil {
 			r.logger.Debug("error func SelectReviewList, method Scan by path"+
 				" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
@@ -862,8 +898,10 @@ func (r *RepositoryProfile) SelectReviewList(
 	}
 	paging := pagination.GetPagination(size, page, totalItems)
 	response := profile.ResponseListReview{
-		Pagination: paging,
-		Content:    list,
+		Pagination:               paging,
+		RatingAverage:            roundedAvgRating,
+		CountItemsTodayByProfile: count,
+		Content:                  list,
 	}
 	return &response, nil
 }

@@ -221,32 +221,48 @@ type ReviewProfile struct {
 	ID         uint64    `json:"id"`
 	ProfileID  uint64    `json:"profileId"`
 	Message    string    `json:"message"`
-	Rating     uint8     `json:"rating"`
+	Rating     float32   `json:"rating"`
 	HasDeleted bool      `json:"hasDeleted"`
 	HasEdited  bool      `json:"hasEdited"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
+type ResponseReviewProfile struct {
+	ID         uint64    `json:"id"`
+	ProfileID  uint64    `json:"profileId"`
+	Message    string    `json:"message"`
+	Rating     float32   `json:"rating"`
+	HasDeleted bool      `json:"hasDeleted"`
+	HasEdited  bool      `json:"hasEdited"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+	UserID     string    `json:"userId"`
+}
+
 type QueryParamsReviewList struct {
 	pagination.Pagination
+	ProfileID string `json:"profileId"`
 }
 
 type ContentReviewProfile struct {
 	ID          uint64    `json:"id"`
 	ProfileID   uint64    `json:"profileId"`
 	Message     string    `json:"message"`
-	Rating      uint8     `json:"rating"`
+	Rating      float32   `json:"rating"`
 	HasDeleted  bool      `json:"hasDeleted"`
 	HasEdited   bool      `json:"hasEdited"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DisplayName string    `json:"displayName"`
+	UserID      string    `json:"userId"`
 }
 
 type ResponseListReview struct {
 	*pagination.Pagination
-	Content []*ContentReviewProfile `json:"content"`
+	RatingAverage            float32                 `json:"ratingAverage"`
+	CountItemsTodayByProfile uint                    `json:"countItemsTodayByProfile"`
+	Content                  []*ContentReviewProfile `json:"content"`
 }
 
 type RequestAddReview struct {
