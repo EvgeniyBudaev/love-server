@@ -905,3 +905,17 @@ func (r *RepositoryProfile) SelectReviewList(
 	}
 	return &response, nil
 }
+
+func (r *RepositoryProfile) AddLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error) {
+	query := `INSERT INTO profile_likes (profile_id, human_id, is_liked, created_at, updated_at)
+			  VALUES ($1, $2, $3, $4, $5)
+			  RETURNING id`
+	err := r.db.QueryRowContext(ctx, query, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt,
+		&p.UpdatedAt).Scan(&p.ID)
+	if err != nil {
+		r.logger.Debug("error func AddLike, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return p, nil
+}

@@ -1547,3 +1547,41 @@ func (h *HandlerProfile) GetReviewListHandler() fiber.Handler {
 		return r.WrapOk(ctf, response)
 	}
 }
+
+func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/like/add")
+		req := profile.RequestAddLike{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func AddLikeHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		profileID, err := strconv.ParseUint(req.ProfileID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func AddLikeHandler, method ParseUint roomIdStr by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		humanID, err := strconv.ParseUint(req.HumanID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func AddLikeHandler, method ParseUint roomIdStr by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		reviewDto := &profile.LikeProfile{
+			ProfileID: profileID,
+			HumanID:   humanID,
+			IsLiked:   true,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		review, err := h.uc.AddLike(ctf.Context(), reviewDto)
+		if err != nil {
+			h.logger.Debug("error func AddLikeHandler, method AddLike by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, review)
+	}
+}

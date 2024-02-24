@@ -65,6 +65,7 @@ migrate create -ext sql -dir migrations ProfileTelegramCreationMigration
 migrate create -ext sql -dir migrations ProfileNavigatorsCreationMigration
 migrate create -ext sql -dir migrations ProfileImagesCreationMigration
 migrate create -ext sql -dir migrations ProfileReviewsCreationMigration
+migrate create -ext sql -dir migrations ProfileLikesCreationMigration
 ```
 
 Создание up sql файлов

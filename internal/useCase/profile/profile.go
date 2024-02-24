@@ -42,6 +42,7 @@ type profileRepo interface {
 	DeleteReview(ctx context.Context, p *profile.ReviewProfile) (*profile.ReviewProfile, error)
 	FindReviewById(ctx context.Context, id uint64) (*profile.ResponseReviewProfile, error)
 	SelectReviewList(ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error)
+	AddLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error)
 }
 
 type UseCaseProfile struct {
@@ -386,6 +387,16 @@ func (u *UseCaseProfile) SelectReviewList(
 	response, err := u.profileRepo.SelectReviewList(ctx, qp)
 	if err != nil {
 		u.logger.Debug("error func SelectReviewList, method SelectReviewList by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) AddLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error) {
+	response, err := u.profileRepo.AddLike(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func AddLike, method AddLike by path"+
 			" internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, err
 	}

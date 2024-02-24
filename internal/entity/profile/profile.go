@@ -281,3 +281,17 @@ type RequestUpdateReview struct {
 type RequestDeleteReview struct {
 	ID string `json:"id"`
 }
+
+type LikeProfile struct {
+	ID        uint64    `json:"id"`
+	ProfileID uint64    `json:"profileId"`
+	HumanID   uint64    `json:"humanId"`
+	IsLiked   bool      `json:"isLiked"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type RequestAddLike struct {
+	ProfileID string `json:"profileId"`
+	HumanID   string `json:"humanId"`
+}
