@@ -7,6 +7,7 @@ import (
 	"github.com/EvgeniyBudaev/love-server/internal/entity/pagination"
 	"github.com/EvgeniyBudaev/love-server/internal/entity/profile"
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
+	useCaseProfile "github.com/EvgeniyBudaev/love-server/internal/useCase/profile"
 	"go.uber.org/zap"
 	"math"
 	"strconv"
@@ -18,7 +19,7 @@ type RepositoryProfile struct {
 	db     *sql.DB
 }
 
-func NewRepositoryProfile(logger logger.Logger, db *sql.DB) *RepositoryProfile {
+func NewRepositoryProfile(logger logger.Logger, db *sql.DB) useCaseProfile.Store {
 	return &RepositoryProfile{
 		logger: logger,
 		db:     db,

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type profileRepo interface {
+type Store interface {
 	Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	UpdateLastOnline(ctx context.Context, profileID uint64) error
@@ -47,10 +47,10 @@ type profileRepo interface {
 
 type UseCaseProfile struct {
 	logger      logger.Logger
-	profileRepo profileRepo
+	profileRepo Store
 }
 
-func NewUseCaseProfile(l logger.Logger, pr profileRepo) *UseCaseProfile {
+func NewUseCaseProfile(l logger.Logger, pr Store) *UseCaseProfile {
 	return &UseCaseProfile{
 		logger:      l,
 		profileRepo: pr,
