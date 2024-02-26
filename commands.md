@@ -137,3 +137,10 @@ https://github.com/gookit/goutil
 ```
 go get -u github.com/gookit/goutil
 ```
+
+go-webp Сжатие изображений
+```
+sudo apt-get update
+sudo apt-get install libwebp-dev
+go get -u github.com/kolesa-team/go-webp
+```

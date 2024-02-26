@@ -31,54 +31,61 @@ type Profile struct {
 }
 
 type RequestAddProfile struct {
-	UserID          string    `json:"userId"`
-	TelegramID      string    `json:"telegramId"`
-	UserName        string    `json:"username"`
-	Firstname       string    `json:"firstName"`
-	Lastname        string    `json:"lastName"`
-	LanguageCode    string    `json:"languageCode"`
-	AllowsWriteToPm string    `json:"allowsWriteToPm"`
-	QueryID         string    `json:"queryId"`
-	DisplayName     string    `json:"displayName"`
-	Birthday        time.Time `json:"birthday"`
-	Gender          string    `json:"gender"`
-	SearchGender    string    `json:"searchGender"`
-	Location        string    `json:"location"`
-	Description     string    `json:"description"`
-	Height          string    `json:"height"`
-	Weight          string    `json:"weight"`
-	LookingFor      string    `json:"lookingFor"`
-	Latitude        string    `json:"latitude"`
-	Longitude       string    `json:"longitude"`
-	AgeFrom         string    `json:"ageFrom"`
-	AgeTo           string    `json:"ageTo"`
-	Distance        string    `json:"distance"`
-	Page            string    `json:"page"`
-	Size            string    `json:"size"`
-	Image           []byte    `json:"image"`
+	UserID           string    `json:"userId"`
+	UserName         string    `json:"userName"`
+	DisplayName      string    `json:"displayName"`
+	Birthday         time.Time `json:"birthday"`
+	Gender           string    `json:"gender"`
+	SearchGender     string    `json:"searchGender"`
+	Location         string    `json:"location"`
+	Description      string    `json:"description"`
+	Height           string    `json:"height"`
+	Weight           string    `json:"weight"`
+	LookingFor       string    `json:"lookingFor"`
+	TelegramID       string    `json:"telegramId"`
+	TelegramUserName string    `json:"telegramUserName"`
+	Firstname        string    `json:"firstName"`
+	Lastname         string    `json:"lastName"`
+	LanguageCode     string    `json:"languageCode"`
+	AllowsWriteToPm  string    `json:"allowsWriteToPm"`
+	QueryID          string    `json:"queryId"`
+	Latitude         string    `json:"latitude"`
+	Longitude        string    `json:"longitude"`
+	AgeFrom          string    `json:"ageFrom"`
+	AgeTo            string    `json:"ageTo"`
+	Distance         string    `json:"distance"`
+	Page             string    `json:"page"`
+	Size             string    `json:"size"`
+	Image            []byte    `json:"image"`
 }
 
 type RequestUpdateProfile struct {
-	TelegramID      string    `json:"telegramId"`
-	UserName        string    `json:"username"`
-	Firstname       string    `json:"firstName"`
-	Lastname        string    `json:"lastName"`
-	LanguageCode    string    `json:"languageCode"`
-	AllowsWriteToPm string    `json:"allowsWriteToPm"`
-	QueryID         string    `json:"queryId"`
-	ID              string    `json:"id"`
-	DisplayName     string    `json:"displayName"`
-	Birthday        time.Time `json:"birthday"`
-	Gender          string    `json:"gender"`
-	SearchGender    string    `json:"searchGender"`
-	Location        string    `json:"location"`
-	Description     string    `json:"description"`
-	Height          string    `json:"height"`
-	Weight          string    `json:"weight"`
-	LookingFor      string    `json:"lookingFor"`
-	Latitude        string    `json:"latitude"`
-	Longitude       string    `json:"longitude"`
-	Image           []byte    `json:"image"`
+	ID               string    `json:"id"`
+	UserName         string    `json:"userName"`
+	DisplayName      string    `json:"displayName"`
+	Birthday         time.Time `json:"birthday"`
+	Gender           string    `json:"gender"`
+	SearchGender     string    `json:"searchGender"`
+	Location         string    `json:"location"`
+	Description      string    `json:"description"`
+	Height           string    `json:"height"`
+	Weight           string    `json:"weight"`
+	LookingFor       string    `json:"lookingFor"`
+	TelegramID       string    `json:"telegramId"`
+	TelegramUserName string    `json:"telegramUserName"`
+	Firstname        string    `json:"firstName"`
+	Lastname         string    `json:"lastName"`
+	LanguageCode     string    `json:"languageCode"`
+	AllowsWriteToPm  string    `json:"allowsWriteToPm"`
+	QueryID          string    `json:"queryId"`
+	Latitude         string    `json:"latitude"`
+	Longitude        string    `json:"longitude"`
+	AgeFrom          string    `json:"ageFrom"`
+	AgeTo            string    `json:"ageTo"`
+	Distance         string    `json:"distance"`
+	Page             string    `json:"page"`
+	Size             string    `json:"size"`
+	Image            []byte    `json:"image"`
 }
 
 type RequestDeleteProfile struct {
@@ -109,6 +116,32 @@ type ResponseProfile struct {
 	Filter   *ResponseFilterProfile   `json:"filter"`
 }
 
+type ResponseProfileDetail struct {
+	ID             uint64                    `json:"id"`
+	UserID         string                    `json:"userId"`
+	DisplayName    string                    `json:"displayName"`
+	Birthday       time.Time                 `json:"birthday"`
+	Gender         string                    `json:"gender"`
+	Location       string                    `json:"location"`
+	Height         uint8                     `json:"height"`
+	Weight         uint8                     `json:"weight"`
+	Description    string                    `json:"description"`
+	IsDeleted      bool                      `json:"isDeleted"`
+	IsBlocked      bool                      `json:"isBlocked"`
+	IsPremium      bool                      `json:"isPremium"`
+	IsShowDistance bool                      `json:"isShowDistance"`
+	IsInvisible    bool                      `json:"isInvisible"`
+	CreatedAt      time.Time                 `json:"createdAt"`
+	UpdatedAt      time.Time                 `json:"updatedAt"`
+	LastOnline     time.Time                 `json:"lastOnline"`
+	Images         []*ImageProfile           `json:"images"`
+	Complaints     []*ComplaintProfile       `json:"complaints"`
+	Telegram       *TelegramProfile          `json:"telegram"`
+	Navigator      *ResponseNavigatorProfile `json:"navigator"`
+	Filter         *FilterProfile            `json:"filters"`
+	Like           *ResponseLikeProfile      `json:"like"`
+}
+
 type ComplaintProfile struct {
 	ID        uint64 `json:"id"`
 	ProfileID uint64 `json:"profileId"`
@@ -121,6 +154,7 @@ type QueryParamsProfileList struct {
 	AgeFrom      string `json:"ageFrom"`
 	AgeTo        string `json:"ageTo"`
 	SearchGender string `json:"searchGender"`
+	LookingFor   string `json:"lookingFor"`
 	Distance     string `json:"distance"`
 }
 
@@ -292,6 +326,20 @@ type LikeProfile struct {
 }
 
 type RequestAddLike struct {
-	ProfileID string `json:"profileId"`
-	HumanID   string `json:"humanId"`
+	UserID  string `json:"userId"`
+	HumanID string `json:"humanId"`
+}
+
+type RequestUpdateLike struct {
+	ID string `json:"id"`
+}
+
+type RequestDeleteLike struct {
+	ID string `json:"id"`
+}
+
+type ResponseLikeProfile struct {
+	ID        *uint64    `json:"id"`
+	IsLiked   bool       `json:"isLiked"`
+	UpdatedAt *time.Time `json:"updatedAt"`
 }

@@ -920,3 +920,84 @@ func (r *RepositoryProfile) AddLike(ctx context.Context, p *profile.LikeProfile)
 	}
 	return p, nil
 }
+
+func (r *RepositoryProfile) UpdateLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateLike, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := `UPDATE profile_likes
+			  SET profile_id=$1, human_id=$2, is_liked=$3, created_at=$4, updated_at=$5
+			  WHERE id=$6`
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func UpdateLike, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) DeleteLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func DeleteLike, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := `UPDATE profile_likes
+			  SET profile_id=$1, human_id=$2, is_liked=$3, created_at=$4, updated_at=$5
+			  WHERE id=$6`
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt, &p.ID)
+	if err != nil {
+		r.logger.Debug(
+			"error func DeleteLike, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
+			zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindLikeByHumanID(
+	ctx context.Context, profileID uint64, humanID uint64) (*profile.LikeProfile, bool, error) {
+	p := profile.LikeProfile{}
+	query := `SELECT id, profile_id, human_id, is_liked, created_at, updated_at
+			  FROM profile_likes
+			  WHERE profile_id=$1 AND human_id = $2`
+	err := r.db.QueryRowContext(ctx, query, profileID, humanID).
+		Scan(&p.ID, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		r.logger.Debug("error func FindLikeByHumanID, method Scan by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, false, err
+	}
+	return &p, true, nil
+}
+
+func (r *RepositoryProfile) FindLikeByID(ctx context.Context, id uint64) (*profile.LikeProfile, bool, error) {
+	p := profile.LikeProfile{}
+	query := `SELECT id, profile_id, human_id, is_liked, created_at, updated_at
+			  FROM profile_likes
+			  WHERE id=$1`
+	err := r.db.QueryRowContext(ctx, query, id).
+		Scan(&p.ID, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		r.logger.Debug("error func FindLikeByID, method Scan by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, false, err
+	}
+	return &p, true, nil
+}

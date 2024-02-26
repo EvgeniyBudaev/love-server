@@ -8,12 +8,17 @@ import (
 	"github.com/EvgeniyBudaev/love-server/internal/logger"
 	profileUseCase "github.com/EvgeniyBudaev/love-server/internal/useCase/profile"
 	"github.com/gofiber/fiber/v2"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"image/jpeg"
 	"math"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -60,9 +65,48 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 					" internal/handler/profile/profile.go", zap.Error(err))
 				return r.WrapError(ctf, err, http.StatusBadRequest)
 			}
+			fileImage, err := os.Open(filePath)
+			if err != nil {
+				h.logger.Debug("error func AddProfileHandler, method os.Open by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			// The Decode function is used to read images from a file or other source and convert them into an image.
+			// Image structure
+			img, err := jpeg.Decode(fileImage)
+			if err != nil {
+				h.logger.Debug("error func AddProfileHandler, method jpeg.Decode by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			newFileName := replaceExtension(file.Filename)
+			newFilePath := fmt.Sprintf("%s/%s", directoryPath, newFileName)
+			output, err := os.Create(directoryPath + "/" + newFileName)
+			if err != nil {
+				h.logger.Debug("error func AddProfileHandler, method os.Create by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			defer output.Close()
+			options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
+			if err != nil {
+				h.logger.Debug("error func AddProfileHandler, method NewLossyEncoderOptions by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			if err := webp.Encode(output, img, options); err != nil {
+				h.logger.Debug("error func AddProfileHandler, method webp.Encode by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			if err := os.Remove(filePath); err != nil {
+				h.logger.Debug("error func AddProfileHandler, method os.Remove by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
 			image := profile.ImageProfile{
 				Name:      file.Filename,
-				Url:       filePath,
+				Url:       newFilePath,
 				Size:      file.Size,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -71,7 +115,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 				IsPrimary: false,
 				IsPrivate: false,
 			}
-			imagesFilePath = append(imagesFilePath, filePath)
+			imagesFilePath = append(imagesFilePath, newFilePath)
 			imagesProfile = append(imagesProfile, &image)
 		}
 		height := 0
@@ -149,7 +193,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 		telegramDto := &profile.TelegramProfile{
 			ProfileID:       newProfile.ID,
 			TelegramID:      telegramID,
-			UserName:        req.UserName,
+			UserName:        req.TelegramUserName,
 			Firstname:       req.Firstname,
 			Lastname:        req.Lastname,
 			LanguageCode:    req.LanguageCode,
@@ -359,6 +403,7 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 			ID:           f.ID,
 			ProfileID:    profileID,
 			SearchGender: params.SearchGender,
+			LookingFor:   params.LookingFor,
 			AgeFrom:      uint8(ageFrom),
 			AgeTo:        uint8(ageTo),
 			Distance:     uint64(distance),
@@ -770,7 +815,28 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		response := &profile.Profile{
+		l, isExistLike, err := h.uc.FindLikeByHumanID(ctf.Context(), v.ID, profileID)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, FindLikeByHumanID by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		lDao := &profile.ResponseLikeProfile{
+			ID: func() *uint64 {
+				if isExistLike {
+					return &l.ID
+				}
+				return nil
+			}(),
+			IsLiked: isExistLike && l.IsLiked,
+			UpdatedAt: func() *time.Time {
+				if isExistLike {
+					return &l.UpdatedAt
+				}
+				return nil
+			}(),
+		}
+		response := &profile.ResponseProfileDetail{
 			ID:             p.ID,
 			UserID:         p.UserID,
 			DisplayName:    p.DisplayName,
@@ -792,6 +858,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 			Telegram:       t,
 			Navigator:      n,
 			Filter:         f,
+			Like:           lDao,
 		}
 		return r.WrapOk(ctf, response)
 	}
@@ -876,9 +943,48 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 						" internal/handler/profile/profile.go", zap.Error(err))
 					return r.WrapError(ctf, err, http.StatusBadRequest)
 				}
+				fileImage, err := os.Open(filePath)
+				if err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method os.Open by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				// The Decode function is used to read images from a file or other source and convert them into an image.
+				// Image structure
+				img, err := jpeg.Decode(fileImage)
+				if err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method jpeg.Decode by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				newFileName := replaceExtension(file.Filename)
+				newFilePath := fmt.Sprintf("%s/%s", directoryPath, newFileName)
+				output, err := os.Create(directoryPath + "/" + newFileName)
+				if err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method os.Create by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				defer output.Close()
+				options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
+				if err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method NewLossyEncoderOptions by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				if err := webp.Encode(output, img, options); err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method webp.Encode by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
+				if err := os.Remove(filePath); err != nil {
+					h.logger.Debug("error func UpdateProfileHandler, method os.Remove by path"+
+						" internal/handler/profile/profile.go", zap.Error(err))
+					return r.WrapError(ctf, err, http.StatusBadRequest)
+				}
 				image := profile.ImageProfile{
 					Name:      file.Filename,
-					Url:       filePath,
+					Url:       newFilePath,
 					Size:      file.Size,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -887,7 +993,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 					IsPrimary: false,
 					IsPrivate: false,
 				}
-				imagesFilePath = append(imagesFilePath, filePath)
+				imagesFilePath = append(imagesFilePath, newFilePath)
 				imagesProfile = append(imagesProfile, &image)
 			}
 			profileDto = &profile.Profile{
@@ -1004,7 +1110,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			ID:              t.ID,
 			ProfileID:       profileUpdated.ID,
 			TelegramID:      telegramID,
-			UserName:        req.UserName,
+			UserName:        req.TelegramUserName,
 			Firstname:       req.Firstname,
 			Lastname:        req.Lastname,
 			LanguageCode:    req.LanguageCode,
@@ -1557,20 +1663,20 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		profileID, err := strconv.ParseUint(req.ProfileID, 10, 64)
+		humanID, err := strconv.ParseUint(req.HumanID, 10, 64)
 		if err != nil {
-			h.logger.Debug("error func AddLikeHandler, method ParseUint roomIdStr by path "+
+			h.logger.Debug("error func AddLikeHandler, method ParseUint by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		humanID, err := strconv.ParseUint(req.HumanID, 10, 64)
+		p, err := h.uc.FindByKeycloakID(ctf.Context(), req.UserID)
 		if err != nil {
-			h.logger.Debug("error func AddLikeHandler, method ParseUint roomIdStr by path "+
+			h.logger.Debug("error func AddLikeHandler, method FindByKeycloakID by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		reviewDto := &profile.LikeProfile{
-			ProfileID: profileID,
+			ProfileID: p.ID,
 			HumanID:   humanID,
 			IsLiked:   true,
 			CreatedAt: time.Now(),
@@ -1584,4 +1690,109 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 		}
 		return r.WrapCreated(ctf, review)
 	}
+}
+
+func (h *HandlerProfile) DeleteLikeHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/like/delete")
+		req := profile.RequestDeleteLike{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func DeleteLikeHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		likeID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func DeleteLikeHandler, method ParseUint by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		l, isExistLike, err := h.uc.FindLikeByID(ctf.Context(), likeID)
+		if err != nil {
+			h.logger.Debug("error func DeleteLikeHandler, method FindByKeycloakID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		if !isExistLike {
+			h.logger.Debug("error func DeleteLikeHandler, method !isExistLike by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			msg := errorDomain.ResponseError{
+				StatusCode: http.StatusNotFound,
+				Success:    false,
+				Message:    "not found",
+			}
+			return ctf.Status(http.StatusNotFound).JSON(msg)
+		}
+		reviewDto := &profile.LikeProfile{
+			ID:        likeID,
+			ProfileID: l.ProfileID,
+			HumanID:   l.HumanID,
+			IsLiked:   false,
+			CreatedAt: l.CreatedAt,
+			UpdatedAt: time.Now(),
+		}
+		review, err := h.uc.DeleteLike(ctf.Context(), reviewDto)
+		if err != nil {
+			h.logger.Debug("error func DeleteLikeHandler, method DeleteLike by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, review)
+	}
+}
+
+func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/like/update")
+		req := profile.RequestUpdateLike{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func UpdateLikeHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		likeID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func UpdateLikeHandler, method ParseUint by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		l, isExistLike, err := h.uc.FindLikeByID(ctf.Context(), likeID)
+		if err != nil {
+			h.logger.Debug("error func UpdateLikeHandler, method FindByKeycloakID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		if !isExistLike {
+			h.logger.Debug("error func UpdateLikeHandler, method !isExistLike by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			msg := errorDomain.ResponseError{
+				StatusCode: http.StatusNotFound,
+				Success:    false,
+				Message:    "not found",
+			}
+			return ctf.Status(http.StatusNotFound).JSON(msg)
+		}
+		reviewDto := &profile.LikeProfile{
+			ID:        likeID,
+			ProfileID: l.ProfileID,
+			HumanID:   l.HumanID,
+			IsLiked:   true,
+			CreatedAt: l.CreatedAt,
+			UpdatedAt: time.Now(),
+		}
+		review, err := h.uc.UpdateLike(ctf.Context(), reviewDto)
+		if err != nil {
+			h.logger.Debug("error func UpdateLikeHandler, method UpdateLike by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, review)
+	}
+}
+
+func replaceExtension(filename string) string {
+	// Удаляем текущее расширение
+	filename = strings.TrimSuffix(filename, filepath.Ext(filename))
+	// Добавляем новое расширение .webp
+	return filename + ".webp"
 }
