@@ -343,3 +343,21 @@ type ResponseLikeProfile struct {
 	IsLiked   bool       `json:"isLiked"`
 	UpdatedAt *time.Time `json:"updatedAt"`
 }
+
+type BlockedProfile struct {
+	ID            uint64    `json:"id"`
+	ProfileID     uint64    `json:"profileId"`
+	BlockedUserID uint64    `json:"blockedUserId"`
+	IsBlocked     bool      `json:"isLiked"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+type RequestAddBlock struct {
+	UserID        string `json:"userId"`
+	BlockedUserID string `json:"blockedUserId"`
+}
+
+type RequestUpdateBlock struct {
+	ID string `json:"id"`
+}

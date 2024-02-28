@@ -47,6 +47,9 @@ type Store interface {
 	DeleteLike(ctx context.Context, p *profile.LikeProfile) (*profile.LikeProfile, error)
 	FindLikeByHumanID(ctx context.Context, profileID uint64, humanID uint64) (*profile.LikeProfile, bool, error)
 	FindLikeByID(ctx context.Context, id uint64) (*profile.LikeProfile, bool, error)
+	AddBlock(ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error)
+	UpdateBlock(ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error)
+	FindBlockByID(ctx context.Context, id uint64) (*profile.BlockedProfile, bool, error)
 }
 
 type UseCaseProfile struct {
@@ -442,6 +445,37 @@ func (u *UseCaseProfile) FindLikeByID(ctx context.Context, id uint64) (*profile.
 	response, isExist, err := u.profileRepo.FindLikeByID(ctx, id)
 	if err != nil {
 		u.logger.Debug("error func FindLikeByID, method FindLikeByID by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, isExist, err
+	}
+	return response, isExist, nil
+}
+
+func (u *UseCaseProfile) AddBlock(
+	ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error) {
+	response, err := u.profileRepo.AddBlock(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func AddBlock, method AddBlock by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+func (u *UseCaseProfile) UpdateBlock(
+	ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error) {
+	response, err := u.profileRepo.UpdateBlock(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func UpdateBlock, method UpdateBlock by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindBlockByID(ctx context.Context, id uint64) (*profile.BlockedProfile, bool, error) {
+	response, isExist, err := u.profileRepo.FindBlockByID(ctx, id)
+	if err != nil {
+		u.logger.Debug("error func FindBlockByID, method FindBlockByID by path"+
 			" internal/useCase/profile/profile.go", zap.Error(err))
 		return nil, isExist, err
 	}

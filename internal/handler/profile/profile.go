@@ -1675,20 +1675,20 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		reviewDto := &profile.LikeProfile{
+		likeDto := &profile.LikeProfile{
 			ProfileID: p.ID,
 			HumanID:   humanID,
 			IsLiked:   true,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		review, err := h.uc.AddLike(ctf.Context(), reviewDto)
+		like, err := h.uc.AddLike(ctf.Context(), likeDto)
 		if err != nil {
 			h.logger.Debug("error func AddLikeHandler, method AddLike by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		return r.WrapCreated(ctf, review)
+		return r.WrapCreated(ctf, like)
 	}
 }
 
@@ -1723,7 +1723,7 @@ func (h *HandlerProfile) DeleteLikeHandler() fiber.Handler {
 			}
 			return ctf.Status(http.StatusNotFound).JSON(msg)
 		}
-		reviewDto := &profile.LikeProfile{
+		likeDto := &profile.LikeProfile{
 			ID:        likeID,
 			ProfileID: l.ProfileID,
 			HumanID:   l.HumanID,
@@ -1731,13 +1731,13 @@ func (h *HandlerProfile) DeleteLikeHandler() fiber.Handler {
 			CreatedAt: l.CreatedAt,
 			UpdatedAt: time.Now(),
 		}
-		review, err := h.uc.DeleteLike(ctf.Context(), reviewDto)
+		like, err := h.uc.DeleteLike(ctf.Context(), likeDto)
 		if err != nil {
 			h.logger.Debug("error func DeleteLikeHandler, method DeleteLike by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		return r.WrapCreated(ctf, review)
+		return r.WrapCreated(ctf, like)
 	}
 }
 
@@ -1756,14 +1756,14 @@ func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		l, isExistLike, err := h.uc.FindLikeByID(ctf.Context(), likeID)
+		l, isExist, err := h.uc.FindLikeByID(ctf.Context(), likeID)
 		if err != nil {
-			h.logger.Debug("error func UpdateLikeHandler, method FindByKeycloakID by path "+
+			h.logger.Debug("error func UpdateLikeHandler, method FindLikeByID by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		if !isExistLike {
-			h.logger.Debug("error func UpdateLikeHandler, method !isExistLike by path "+
+		if !isExist {
+			h.logger.Debug("error func UpdateLikeHandler, method !isExist by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			msg := errorDomain.ResponseError{
 				StatusCode: http.StatusNotFound,
@@ -1772,7 +1772,7 @@ func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
 			}
 			return ctf.Status(http.StatusNotFound).JSON(msg)
 		}
-		reviewDto := &profile.LikeProfile{
+		likeDto := &profile.LikeProfile{
 			ID:        likeID,
 			ProfileID: l.ProfileID,
 			HumanID:   l.HumanID,
@@ -1780,13 +1780,100 @@ func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
 			CreatedAt: l.CreatedAt,
 			UpdatedAt: time.Now(),
 		}
-		review, err := h.uc.UpdateLike(ctf.Context(), reviewDto)
+		like, err := h.uc.UpdateLike(ctf.Context(), likeDto)
 		if err != nil {
 			h.logger.Debug("error func UpdateLikeHandler, method UpdateLike by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		return r.WrapCreated(ctf, review)
+		return r.WrapCreated(ctf, like)
+	}
+}
+
+func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/block/add")
+		req := profile.RequestAddBlock{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func AddBlockHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		blockedUserID, err := strconv.ParseUint(req.BlockedUserID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func AddBlockHandler, method ParseUint by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		p, err := h.uc.FindByKeycloakID(ctf.Context(), req.UserID)
+		if err != nil {
+			h.logger.Debug("error func AddBlockHandler, method FindByKeycloakID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		blockDto := &profile.BlockedProfile{
+			ProfileID:     p.ID,
+			BlockedUserID: blockedUserID,
+			IsBlocked:     true,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+		block, err := h.uc.AddBlock(ctf.Context(), blockDto)
+		if err != nil {
+			h.logger.Debug("error func AddBlockHandler, method AddLike by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, block)
+	}
+}
+
+func (h *HandlerProfile) UpdateBlockHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/block/update")
+		req := profile.RequestUpdateBlock{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func UpdateBlockHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		blockID, err := strconv.ParseUint(req.ID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func UpdateBlockHandler method ParseUint by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		b, isExist, err := h.uc.FindBlockByID(ctf.Context(), blockID)
+		if err != nil {
+			h.logger.Debug("error func UpdateBlockHandler, method FindBlockByID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		if !isExist {
+			h.logger.Debug("error func UpdateBlockHandler, method !isExist by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			msg := errorDomain.ResponseError{
+				StatusCode: http.StatusNotFound,
+				Success:    false,
+				Message:    "not found",
+			}
+			return ctf.Status(http.StatusNotFound).JSON(msg)
+		}
+		blockDto := &profile.BlockedProfile{
+			ID:            blockID,
+			ProfileID:     b.ProfileID,
+			BlockedUserID: blockID,
+			IsBlocked:     false,
+			CreatedAt:     b.CreatedAt,
+			UpdatedAt:     time.Now(),
+		}
+		like, err := h.uc.UpdateBlock(ctf.Context(), blockDto)
+		if err != nil {
+			h.logger.Debug("error func UpdateBlockHandler, method UpdateBlock by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		return r.WrapCreated(ctf, like)
 	}
 }
 

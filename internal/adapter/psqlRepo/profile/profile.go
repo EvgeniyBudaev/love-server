@@ -934,9 +934,8 @@ func (r *RepositoryProfile) UpdateLike(ctx context.Context, p *profile.LikeProfi
 			  WHERE id=$6`
 	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func UpdateLike, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func UpdateLike, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -996,6 +995,62 @@ func (r *RepositoryProfile) FindLikeByID(ctx context.Context, id uint64) (*profi
 			return nil, false, nil
 		}
 		r.logger.Debug("error func FindLikeByID, method Scan by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, false, err
+	}
+	return &p, true, nil
+}
+
+func (r *RepositoryProfile) AddBlock(
+	ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error) {
+	query := `INSERT INTO profile_blocks (profile_id, blocked_user_id, is_blocked, created_at, updated_at)
+			  VALUES ($1, $2, $3, $4, $5)
+			  RETURNING id`
+	err := r.db.QueryRowContext(ctx, query, &p.ProfileID, &p.BlockedUserID, &p.IsBlocked, &p.CreatedAt,
+		&p.UpdatedAt).Scan(&p.ID)
+	if err != nil {
+		r.logger.Debug("error func AddBlock, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *RepositoryProfile) UpdateBlock(
+	ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateBlock, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := `UPDATE profile_blocks
+			  SET profile_id=$1, blocked_user_id=$2, is_blocked=$3, created_at=$4, updated_at=$5
+			  WHERE id=$6`
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.BlockedUserID, &p.IsBlocked, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID)
+	if err != nil {
+		r.logger.Debug("error func UpdateBlock, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindBlockByID(ctx context.Context, id uint64) (*profile.BlockedProfile, bool, error) {
+	p := profile.BlockedProfile{}
+	query := `SELECT id, profile_id, blocked_user_id, is_blocked, created_at, updated_at
+			  FROM profile_blocks
+			  WHERE id=$1`
+	err := r.db.QueryRowContext(ctx, query, id).
+		Scan(&p.ID, &p.ProfileID, &p.BlockedUserID, &p.IsBlocked, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		r.logger.Debug("error func FindBlockByID, method Scan by path"+
 			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, false, err
 	}
