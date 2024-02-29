@@ -7,7 +7,7 @@ import (
 
 type Profile struct {
 	ID             uint64                    `json:"id"`
-	UserID         string                    `json:"userId"`
+	SessionID      string                    `json:"sessionId"`
 	DisplayName    string                    `json:"displayName"`
 	Birthday       time.Time                 `json:"birthday"`
 	Gender         string                    `json:"gender"`
@@ -31,7 +31,7 @@ type Profile struct {
 }
 
 type RequestAddProfile struct {
-	UserID           string    `json:"userId"`
+	SessionID        string    `json:"sessionId"`
 	UserName         string    `json:"userName"`
 	DisplayName      string    `json:"displayName"`
 	Birthday         time.Time `json:"birthday"`
@@ -109,16 +109,16 @@ type ResponseListProfile struct {
 }
 
 type ResponseProfile struct {
-	ID       uint64                   `json:"id"`
-	UserID   string                   `json:"userId"`
-	Image    *ResponseImageProfile    `json:"image"`
-	Telegram *ResponseTelegramProfile `json:"telegram"`
-	Filter   *ResponseFilterProfile   `json:"filter"`
+	ID        uint64                   `json:"id"`
+	SessionID string                   `json:"sessionId"`
+	Image     *ResponseImageProfile    `json:"image"`
+	Telegram  *ResponseTelegramProfile `json:"telegram"`
+	Filter    *ResponseFilterProfile   `json:"filter"`
 }
 
 type ResponseProfileDetail struct {
 	ID             uint64                    `json:"id"`
-	UserID         string                    `json:"userId"`
+	SessionID      string                    `json:"sessionId"`
 	DisplayName    string                    `json:"displayName"`
 	Birthday       time.Time                 `json:"birthday"`
 	Gender         string                    `json:"gender"`
@@ -150,7 +150,7 @@ type ComplaintProfile struct {
 
 type QueryParamsProfileList struct {
 	pagination.Pagination
-	ProfileID    string `json:"profileId"`
+	SessionID    string `json:"sessionId"`
 	AgeFrom      string `json:"ageFrom"`
 	AgeTo        string `json:"ageTo"`
 	SearchGender string `json:"searchGender"`
@@ -271,7 +271,7 @@ type ResponseReviewProfile struct {
 	HasEdited  bool      `json:"hasEdited"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
-	UserID     string    `json:"userId"`
+	SessionID  string    `json:"sessionId"`
 }
 
 type QueryParamsReviewList struct {
@@ -289,7 +289,7 @@ type ContentReviewProfile struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DisplayName string    `json:"displayName"`
-	UserID      string    `json:"userId"`
+	SessionID   string    `json:"sessionId"`
 }
 
 type ResponseListReview struct {
@@ -326,8 +326,8 @@ type LikeProfile struct {
 }
 
 type RequestAddLike struct {
-	UserID  string `json:"userId"`
-	HumanID string `json:"humanId"`
+	SessionID string `json:"sessionId"`
+	HumanID   string `json:"humanId"`
 }
 
 type RequestUpdateLike struct {
@@ -354,7 +354,7 @@ type BlockedProfile struct {
 }
 
 type RequestAddBlock struct {
-	UserID        string `json:"userId"`
+	SessionID     string `json:"sessionId"`
 	BlockedUserID string `json:"blockedUserId"`
 }
 

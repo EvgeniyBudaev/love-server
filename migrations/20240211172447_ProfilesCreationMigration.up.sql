@@ -1,7 +1,7 @@
 CREATE TABLE profiles
 (
     id BIGSERIAL NOT NULL PRIMARY KEY,
-    user_id VARCHAR,
+    session_id VARCHAR NOT NULL,
     display_name VARCHAR,
     birthday DATE,
     gender VARCHAR,

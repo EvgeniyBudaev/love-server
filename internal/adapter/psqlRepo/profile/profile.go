@@ -28,11 +28,11 @@ func NewRepositoryProfile(logger logger.Logger, db *sql.DB) useCaseProfile.Store
 
 func (r *RepositoryProfile) Add(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	birthday := p.Birthday.Format("2006-01-02")
-	query := "INSERT INTO profiles (user_id, display_name, birthday, gender, location, description," +
+	query := "INSERT INTO profiles (session_id, display_name, birthday, gender, location, description," +
 		" height, weight, is_deleted, is_blocked, is_premium, is_show_distance, is_invisible," +
 		" created_at, updated_at, last_online) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14," +
 		" $15, $16) RETURNING id"
-	err := r.db.QueryRowContext(ctx, query, &p.UserID, &p.DisplayName, &birthday, &p.Gender, &p.Location,
+	err := r.db.QueryRowContext(ctx, query, &p.SessionID, &p.DisplayName, &birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline).Scan(&p.ID)
 	if err != nil {
@@ -93,10 +93,10 @@ func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*pr
 		return nil, err
 	}
 	defer tx.Rollback()
-	query := "UPDATE profiles SET user_id=$1, display_name=$2, birthday=$3, gender=$4, location=$5," +
+	query := "UPDATE profiles SET session_id=$1, display_name=$2, birthday=$3, gender=$4, location=$5," +
 		" description=$6, height=$7, weight=$8, is_deleted=$9, is_blocked=$10, is_premium=$11," +
 		" is_show_distance=$12, is_invisible=$13, updated_at=$14, last_online=$15 WHERE id=$16"
-	_, err = r.db.ExecContext(ctx, query, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+	_, err = r.db.ExecContext(ctx, query, &p.SessionID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium, &p.IsShowDistance,
 		&p.IsInvisible, &p.UpdatedAt, &p.LastOnline, &p.ID)
 	if err != nil {
@@ -110,7 +110,7 @@ func (r *RepositoryProfile) Delete(ctx context.Context, p *profile.Profile) (*pr
 
 func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT id, user_id, display_name, birthday, gender, location, description, height, weight,
+	query := `SELECT id, session_id, display_name, birthday, gender, location, description, height, weight,
        is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at, last_online
 			  FROM profiles
 			  WHERE id = $1`
@@ -121,7 +121,7 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+	err := row.Scan(&p.ID, &p.SessionID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
 		&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
@@ -132,25 +132,24 @@ func (r *RepositoryProfile) FindById(ctx context.Context, id uint64) (*profile.P
 	return &p, nil
 }
 
-func (r *RepositoryProfile) FindByKeycloakID(ctx context.Context, userID string) (*profile.Profile, error) {
+func (r *RepositoryProfile) FindBySessionID(ctx context.Context, sessionID string) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT id, user_id, display_name, birthday, gender, location, description, height, weight,
+	query := `SELECT id, session_id, display_name, birthday, gender, location, description, height, weight,
        is_deleted, is_blocked, is_premium, is_show_distance, is_invisible, created_at, updated_at, last_online
 			  FROM profiles
-			  WHERE user_id=$1`
-	row := r.db.QueryRowContext(ctx, query, userID)
+			  WHERE session_id=$1`
+	row := r.db.QueryRowContext(ctx, query, sessionID)
 	if row == nil {
 		err := errors.New("no rows found")
-		r.logger.Debug(
-			"error func FindByKeycloakID, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func FindBySessionID, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+	err := row.Scan(&p.ID, &p.SessionID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
 		&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
-		r.logger.Debug("error func FindByKeycloakID, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
+		r.logger.Debug("error func FindBySessionID, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
@@ -159,7 +158,7 @@ func (r *RepositoryProfile) FindByKeycloakID(ctx context.Context, userID string)
 
 func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error) {
 	p := profile.Profile{}
-	query := `SELECT p.id, p.user_id, p.display_name, p.birthday, p.gender, p.location,
+	query := `SELECT p.id, p.session_id, p.display_name, p.birthday, p.gender, p.location,
        p.description, p.height, p.weight, p.is_deleted, p.is_blocked, p.is_premium, p.is_show_distance,
        p.is_invisible, p.created_at, p.updated_at,  p.last_online
 			  FROM profiles p
@@ -172,7 +171,7 @@ func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uin
 			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
-	err := row.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+	err := row.Scan(&p.ID, &p.SessionID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 		&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
 		&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline)
 	if err != nil {
@@ -185,6 +184,12 @@ func (r *RepositoryProfile) FindByTelegramId(ctx context.Context, telegramID uin
 
 func (r *RepositoryProfile) SelectList(
 	ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error) {
+	p, err := r.FindBySessionID(ctx, qp.SessionID)
+	if err != nil {
+		r.logger.Debug("error func SelectList, method FindBySessionID by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
 	ageFromInt, err := strconv.Atoi(qp.AgeFrom)
 	if err != nil {
 		return nil, err
@@ -205,7 +210,7 @@ func (r *RepositoryProfile) SelectList(
 		return nil, err
 	}
 	distanceMeters *= 1000 // Convert kilometers to meters
-	query := "SELECT p.id, p.user_id, p.display_name, p.birthday, p.gender, p.location," +
+	query := "SELECT p.id, p.session_id, p.display_name, p.birthday, p.gender, p.location," +
 		" p.description, p.height, p.weight, p.is_deleted, p.is_blocked, p.is_premium," +
 		" p.is_show_distance, p.is_invisible, p.created_at, p.updated_at, p.last_online," +
 		" ST_Distance((SELECT location FROM profile_navigators WHERE profile_id = p.id)::geography, " +
@@ -215,6 +220,7 @@ func (r *RepositoryProfile) SelectList(
 		" JOIN profile_navigators pn ON p.id = pn.profile_id" +
 		" WHERE p.is_deleted=false AND  p.is_blocked=false AND  p.birthday BETWEEN $1 AND $2" +
 		" AND ($3 = 'all' OR gender=$3) AND  p.id <> $4 AND" +
+		" NOT EXISTS (SELECT 1 FROM profile_blocks WHERE profile_id = $4 AND blocked_user_id = p.id) AND" +
 		" ST_Distance((SELECT location FROM profile_navigators WHERE profile_id = p.id)::geography, " +
 		" ST_SetSRID(ST_MakePoint((SELECT ST_X(location) FROM profile_navigators WHERE profile_id = $4), " +
 		" (SELECT ST_Y(location) FROM profile_navigators WHERE profile_id = $4)), 4326)::geography) <= $5" +
@@ -225,7 +231,7 @@ func (r *RepositoryProfile) SelectList(
 	page := qp.Page
 	// get totalItems
 	totalItems, err := pagination.GetTotalItems(ctx, r.db, countQuery, birthdateFrom, birthdateTo, qp.SearchGender,
-		qp.ProfileID)
+		p.ID)
 	if err != nil {
 		r.logger.Debug("error func SelectList, method GetTotalItems by path"+
 			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
@@ -235,13 +241,7 @@ func (r *RepositoryProfile) SelectList(
 	query = pagination.ApplyPagination(query, page, size)
 	countQuery = pagination.ApplyPagination(countQuery, page, size)
 	// get navigator by profile id
-	profileID, err := strconv.ParseUint(qp.ProfileID, 10, 64)
-	if err != nil {
-		r.logger.Debug("error func SelectList, method ParseUint by path"+
-			" internal/handler/profile/profile.go", zap.Error(err))
-		return nil, err
-	}
-	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, profileID, distanceMeters}
+	queryParams := []interface{}{birthdateFrom, birthdateTo, qp.SearchGender, p.ID, distanceMeters}
 	rows, err := r.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		r.logger.Debug("error func SelectList, method QueryContext by path"+
@@ -253,7 +253,7 @@ func (r *RepositoryProfile) SelectList(
 	for rows.Next() {
 		p := profile.Profile{}
 		n := &profile.ResponseNavigatorProfile{}
-		err := rows.Scan(&p.ID, &p.UserID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
+		err := rows.Scan(&p.ID, &p.SessionID, &p.DisplayName, &p.Birthday, &p.Gender, &p.Location,
 			&p.Description, &p.Height, &p.Weight, &p.IsDeleted, &p.IsBlocked, &p.IsPremium,
 			&p.IsShowDistance, &p.IsInvisible, &p.CreatedAt, &p.UpdatedAt, &p.LastOnline, &n.Distance)
 		if err != nil {
@@ -318,9 +318,8 @@ func (r *RepositoryProfile) UpdateTelegram(
 	_, err = r.db.ExecContext(ctx, query, &p.UserName, &p.Firstname, &p.Lastname, &p.LanguageCode, &p.AllowsWriteToPm,
 		&p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func UpdateTelegram, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func UpdateTelegram, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -341,9 +340,8 @@ func (r *RepositoryProfile) DeleteTelegram(
 	_, err = r.db.ExecContext(ctx, query, &p.TelegramID, &p.UserName, &p.Firstname, &p.Lastname, &p.LanguageCode,
 		&p.AllowsWriteToPm, &p.QueryID, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func DeleteTelegram, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func DeleteTelegram, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -380,9 +378,8 @@ func (r *RepositoryProfile) AddNavigator(
 		" VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3),  4326)) RETURNING id"
 	err := r.db.QueryRowContext(ctx, query, &p.ProfileID, &p.Location.Longitude, &p.Location.Latitude).Scan(&p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func AddNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func AddNavigator, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	return p, nil
@@ -400,9 +397,8 @@ func (r *RepositoryProfile) UpdateNavigator(
 	query := "UPDATE profile_navigators SET location=ST_SetSRID(ST_MakePoint($1, $2),  4326) WHERE profile_id=$3"
 	_, err = r.db.ExecContext(ctx, query, &p.Location.Longitude, &p.Location.Latitude, &p.ProfileID)
 	if err != nil {
-		r.logger.Debug(
-			"error func UpdateNavigator, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func UpdateNavigator, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -637,9 +633,8 @@ func (r *RepositoryProfile) DeleteImage(ctx context.Context, p *profile.ImagePro
 	query := "UPDATE profile_images SET is_deleted=$1 WHERE id=$2"
 	_, err = r.db.ExecContext(ctx, query, &p.IsDeleted, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func DeleteImage method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func DeleteImage method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()
@@ -655,9 +650,8 @@ func (r *RepositoryProfile) FindImageById(ctx context.Context, imageID uint64) (
 	row := r.db.QueryRowContext(ctx, query, imageID)
 	if row == nil {
 		err := errors.New("no rows found")
-		r.logger.Debug(
-			"error func FindImageById, method QueryRowContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func FindImageById, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.ProfileID, &p.Name, &p.Url, &p.Size, &p.CreatedAt, &p.UpdatedAt,
@@ -802,7 +796,7 @@ func (r *RepositoryProfile) DeleteReview(
 func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*profile.ResponseReviewProfile, error) {
 	p := profile.ResponseReviewProfile{}
 	query := `SELECT pr.id, pr.profile_id, pr.message, pr.rating, pr.has_deleted, pr.has_edited, pr.created_at,
-       pr.updated_at, p.user_id
+       pr.updated_at, p.session_id
 			  FROM profile_reviews pr
               JOIN profiles p ON pr.profile_id = p.id
 			  WHERE pr.id = $1`
@@ -814,7 +808,7 @@ func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*pro
 		return nil, err
 	}
 	err := row.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted,
-		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt, &p.UserID)
+		&p.HasEdited, &p.CreatedAt, &p.UpdatedAt, &p.SessionID)
 	if err != nil {
 		r.logger.Debug("error func FindReviewById, method Scan by path internal/adapter/psqlRepo/profile/profile.go",
 			zap.Error(err))
@@ -826,7 +820,7 @@ func (r *RepositoryProfile) FindReviewById(ctx context.Context, id uint64) (*pro
 func (r *RepositoryProfile) SelectReviewList(
 	ctx context.Context, qp *profile.QueryParamsReviewList) (*profile.ResponseListReview, error) {
 	query := `SELECT pr.id, pr.profile_id, pr.message, pr.rating, pr.has_deleted, pr.has_edited, pr.created_at,
-                pr.updated_at, p.display_name, p.user_id
+                pr.updated_at, p.display_name, p.session_id
               FROM profile_reviews pr
               JOIN profiles p ON pr.profile_id = p.id
               WHERE has_deleted=false
@@ -889,7 +883,7 @@ func (r *RepositoryProfile) SelectReviewList(
 	for rows.Next() {
 		p := profile.ContentReviewProfile{}
 		err := rows.Scan(&p.ID, &p.ProfileID, &p.Message, &p.Rating, &p.HasDeleted, &p.HasEdited, &p.CreatedAt,
-			&p.UpdatedAt, &p.DisplayName, &p.UserID)
+			&p.UpdatedAt, &p.DisplayName, &p.SessionID)
 		if err != nil {
 			r.logger.Debug("error func SelectReviewList, method Scan by path"+
 				" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
@@ -955,9 +949,8 @@ func (r *RepositoryProfile) DeleteLike(ctx context.Context, p *profile.LikeProfi
 			  WHERE id=$6`
 	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.HumanID, &p.IsLiked, &p.CreatedAt, &p.UpdatedAt, &p.ID)
 	if err != nil {
-		r.logger.Debug(
-			"error func DeleteLike, method ExecContext by path internal/adapter/psqlRepo/profile/profile.go",
-			zap.Error(err))
+		r.logger.Debug("error func DeleteLike, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
 		return nil, err
 	}
 	tx.Commit()

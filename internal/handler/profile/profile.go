@@ -139,7 +139,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			weight = int(weightUint64)
 		}
 		profileDto := &profile.Profile{
-			UserID:         req.UserID,
+			SessionID:      req.SessionID,
 			DisplayName:    req.DisplayName,
 			Birthday:       req.Birthday,
 			Gender:         req.Gender,
@@ -324,7 +324,7 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
-			UserID:         p.UserID,
+			SessionID:      p.SessionID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -357,13 +357,13 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		profileID, err := strconv.ParseUint(params.ProfileID, 10, 64)
+		p, err := h.uc.FindBySessionID(ctf.Context(), params.SessionID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileListHandler, method ParseUint by path"+
+			h.logger.Debug("error func GetProfileListHandler, method FindBySessionID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		f, err := h.uc.FindFilterByProfileID(ctf.Context(), profileID)
+		f, err := h.uc.FindFilterByProfileID(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func GetProfileListHandler, method FindFilterByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -401,7 +401,7 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 		}
 		filterDto := &profile.FilterProfile{
 			ID:           f.ID,
-			ProfileID:    profileID,
+			ProfileID:    p.ID,
 			SearchGender: params.SearchGender,
 			LookingFor:   params.LookingFor,
 			AgeFrom:      uint8(ageFrom),
@@ -416,7 +416,7 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		err = h.uc.UpdateLastOnline(ctf.Context(), profileID)
+		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func GetProfileListHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -509,10 +509,10 @@ func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		response := &profile.ResponseProfile{
-			ID:       p.ID,
-			UserID:   p.UserID,
-			Image:    nil,
-			Telegram: &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
+			ID:        p.ID,
+			SessionID: p.SessionID,
+			Image:     nil,
+			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
 			Filter: &profile.ResponseFilterProfile{
 				ID:           f.ID,
 				SearchGender: f.SearchGender,
@@ -534,25 +534,25 @@ func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
 	}
 }
 
-func (h *HandlerProfile) GetProfileByUserIDHandler() fiber.Handler {
+func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("GET /api/v1/profile/keycloak/:id")
-		userID := ctf.Params("id")
+		h.logger.Info("GET /api/v1/profile/session/:id")
+		sessionID := ctf.Params("id")
 		params := profile.QueryParamsGetProfileByUserID{}
 		if err := ctf.QueryParser(&params); err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method QueryParser by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method QueryParser by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		p, err := h.uc.FindByKeycloakID(ctf.Context(), userID)
+		p, err := h.uc.FindBySessionID(ctf.Context(), sessionID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method FindById by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method FindBySessionID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method UpdateLastOnline by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -561,13 +561,13 @@ func (h *HandlerProfile) GetProfileByUserIDHandler() fiber.Handler {
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
-				h.logger.Debug("error func GetProfileByUserIDHandler, method ParseFloat height by path"+
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method ParseFloat height by path"+
 					" internal/handler/profile/profile.go", zap.Error(err))
 				return r.WrapError(ctf, err, http.StatusBadRequest)
 			}
 			longitude, err := strconv.ParseFloat(longitudeStr, 64)
 			if err != nil {
-				h.logger.Debug("error func GetProfileByUserIDHandler, method ParseFloat height by path"+
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method ParseFloat height by path"+
 					" internal/handler/profile/profile.go", zap.Error(err))
 				return r.WrapError(ctf, err, http.StatusBadRequest)
 			}
@@ -581,34 +581,34 @@ func (h *HandlerProfile) GetProfileByUserIDHandler() fiber.Handler {
 			}
 			_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
 			if err != nil {
-				h.logger.Debug("error func GetProfileByUserIDHandler, method UpdateNavigator by path"+
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method UpdateNavigator by path"+
 					" internal/handler/profile/profile.go", zap.Error(err))
 				return r.WrapError(ctf, err, http.StatusBadRequest)
 			}
 		}
 		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method FindTelegramByProfileID by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method FindTelegramByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		f, err := h.uc.FindFilterByProfileID(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method FindFilterByProfileID by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method FindFilterByProfileID by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		i, err := h.uc.SelectListPublicImage(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileByUserIDHandler, method SelectListPublicImage by path"+
+			h.logger.Debug("error func GetProfileBySessionIDHandler, method SelectListPublicImage by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		response := &profile.ResponseProfile{
-			ID:       p.ID,
-			UserID:   p.UserID,
-			Image:    nil,
-			Telegram: &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
+			ID:        p.ID,
+			SessionID: p.SessionID,
+			Image:     nil,
+			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
 			Filter: &profile.ResponseFilterProfile{
 				ID:           f.ID,
 				SearchGender: f.SearchGender,
@@ -707,10 +707,10 @@ func (h *HandlerProfile) GetProfileByIDHandler() fiber.Handler {
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		response := &profile.ResponseProfile{
-			ID:       p.ID,
-			UserID:   p.UserID,
-			Image:    nil,
-			Telegram: &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
+			ID:        p.ID,
+			SessionID: p.SessionID,
+			Image:     nil,
+			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
 			Filter: &profile.ResponseFilterProfile{
 				ID:           f.ID,
 				SearchGender: f.SearchGender,
@@ -754,10 +754,15 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		v, err := h.uc.FindByKeycloakID(ctf.Context(), params.ViewerID)
+		v, err := h.uc.FindBySessionID(ctf.Context(), params.ViewerID)
+		if err != nil {
+			h.logger.Debug("error func GetProfileDetailHandler, method FindBySessionID by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
 		if err != nil {
-			h.logger.Debug("error func GetProfileDetailHandler, method FindByKeycloakID by path"+
+			h.logger.Debug("error func GetProfileDetailHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -821,24 +826,27 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		lDao := &profile.ResponseLikeProfile{
-			ID: func() *uint64 {
-				if isExistLike {
-					return &l.ID
-				}
-				return nil
-			}(),
-			IsLiked: isExistLike && l.IsLiked,
-			UpdatedAt: func() *time.Time {
-				if isExistLike {
-					return &l.UpdatedAt
-				}
-				return nil
-			}(),
+		var lDao *profile.ResponseLikeProfile
+		if isExistLike {
+			lDao = &profile.ResponseLikeProfile{
+				ID: func() *uint64 {
+					if isExistLike {
+						return &l.ID
+					}
+					return nil
+				}(),
+				IsLiked: isExistLike && l.IsLiked,
+				UpdatedAt: func() *time.Time {
+					if isExistLike {
+						return &l.UpdatedAt
+					}
+					return nil
+				}(),
+			}
 		}
 		response := &profile.ResponseProfileDetail{
 			ID:             p.ID,
-			UserID:         p.UserID,
+			SessionID:      p.SessionID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -998,7 +1006,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			}
 			profileDto = &profile.Profile{
 				ID:             profileID,
-				UserID:         profileInDB.UserID,
+				SessionID:      profileInDB.SessionID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -1019,7 +1027,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 		} else {
 			profileDto = &profile.Profile{
 				ID:             profileID,
-				UserID:         profileInDB.UserID,
+				SessionID:      profileInDB.SessionID,
 				DisplayName:    req.DisplayName,
 				Birthday:       req.Birthday,
 				Gender:         req.Gender,
@@ -1196,7 +1204,7 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
-			UserID:         p.UserID,
+			SessionID:      p.SessionID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -1345,7 +1353,7 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 		}
 		profileDto := &profile.Profile{
 			ID:             profileID,
-			UserID:         "",
+			SessionID:      "",
 			DisplayName:    "",
 			Birthday:       profileInDB.Birthday,
 			Gender:         "",
@@ -1376,7 +1384,7 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 		}
 		response := &profile.Profile{
 			ID:             p.ID,
-			UserID:         p.UserID,
+			SessionID:      p.SessionID,
 			DisplayName:    p.DisplayName,
 			Birthday:       p.Birthday,
 			Gender:         p.Gender,
@@ -1669,7 +1677,7 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		p, err := h.uc.FindByKeycloakID(ctf.Context(), req.UserID)
+		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
 			h.logger.Debug("error func AddLikeHandler, method FindByKeycloakID by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -1805,7 +1813,7 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		p, err := h.uc.FindByKeycloakID(ctf.Context(), req.UserID)
+		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
 			h.logger.Debug("error func AddBlockHandler, method FindByKeycloakID by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -1819,6 +1827,19 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 			UpdatedAt:     time.Now(),
 		}
 		block, err := h.uc.AddBlock(ctf.Context(), blockDto)
+		if err != nil {
+			h.logger.Debug("error func AddBlockHandler, method AddLike by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		blockForBlockedUserDto := &profile.BlockedProfile{
+			ProfileID:     blockedUserID,
+			BlockedUserID: p.ID,
+			IsBlocked:     true,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+		_, err = h.uc.AddBlock(ctf.Context(), blockForBlockedUserDto)
 		if err != nil {
 			h.logger.Debug("error func AddBlockHandler, method AddLike by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))

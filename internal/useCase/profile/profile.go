@@ -14,7 +14,7 @@ type Store interface {
 	Delete(ctx context.Context, p *profile.Profile) (*profile.Profile, error)
 	SelectList(ctx context.Context, qp *profile.QueryParamsProfileList) (*profile.ResponseListProfile, error)
 	FindById(ctx context.Context, id uint64) (*profile.Profile, error)
-	FindByKeycloakID(ctx context.Context, userID string) (*profile.Profile, error)
+	FindBySessionID(ctx context.Context, sessionID string) (*profile.Profile, error)
 	FindByTelegramId(ctx context.Context, telegramID uint64) (*profile.Profile, error)
 	AddTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
 	UpdateTelegram(ctx context.Context, t *profile.TelegramProfile) (*profile.TelegramProfile, error)
@@ -122,10 +122,10 @@ func (u *UseCaseProfile) FindById(ctx context.Context, id uint64) (*profile.Prof
 	return response, nil
 }
 
-func (u *UseCaseProfile) FindByKeycloakID(ctx context.Context, userID string) (*profile.Profile, error) {
-	response, err := u.profileRepo.FindByKeycloakID(ctx, userID)
+func (u *UseCaseProfile) FindBySessionID(ctx context.Context, sessionID string) (*profile.Profile, error) {
+	response, err := u.profileRepo.FindBySessionID(ctx, sessionID)
 	if err != nil {
-		u.logger.Debug("error func FindByKeycloakID, method FindById by path internal/useCase/profile/profile.go",
+		u.logger.Debug("error func FindBySessionID, method FindBySessionID by path internal/useCase/profile/profile.go",
 			zap.Error(err))
 		return nil, err
 	}
