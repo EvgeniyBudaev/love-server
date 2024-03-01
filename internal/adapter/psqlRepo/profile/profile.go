@@ -75,7 +75,7 @@ func (r *RepositoryProfile) UpdateLastOnline(ctx context.Context, profileID uint
 	}
 	defer tx.Rollback()
 	query := "UPDATE profiles SET last_online=$1 WHERE id=$2"
-	_, err = r.db.ExecContext(ctx, query, time.Now(), profileID)
+	_, err = r.db.ExecContext(ctx, query, time.Now().UTC(), profileID)
 	if err != nil {
 		r.logger.Debug("error func UpdateLastOnline, method ExecContext by path"+
 			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
@@ -198,8 +198,8 @@ func (r *RepositoryProfile) SelectList(
 	if err != nil {
 		return nil, err
 	}
-	birthYearStart := time.Now().Year() - ageToInt - 1
-	birthYearEnd := time.Now().Year() - ageFromInt
+	birthYearStart := time.Now().UTC().Year() - ageToInt - 1
+	birthYearEnd := time.Now().UTC().Year() - ageFromInt
 	birthdateFrom := time.Date(birthYearStart, time.January, 1, 0, 0, 0, 0, time.UTC)
 	birthdateTo := time.Date(birthYearEnd, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 	// Convert qp.Distance from kilometers to meters
@@ -274,8 +274,8 @@ func (r *RepositoryProfile) SelectList(
 			Image:      nil,
 			Navigator:  n,
 		}
-		now := time.Now()
-		if now.Sub(p.LastOnline).Minutes() < 5 {
+		elapsed := time.Since(p.LastOnline)
+		if elapsed.Minutes() < 5 {
 			lp.IsOnline = true
 		}
 		if len(images) > 0 {

@@ -108,8 +108,8 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 				Name:      file.Filename,
 				Url:       newFilePath,
 				Size:      file.Size,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
 				IsDeleted: false,
 				IsBlocked: false,
 				IsPrimary: false,
@@ -152,9 +152,9 @@ func (h *HandlerProfile) AddProfileHandler() fiber.Handler {
 			IsPremium:      false,
 			IsShowDistance: true,
 			IsInvisible:    false,
-			CreatedAt:      time.Now(),
-			UpdatedAt:      time.Now(),
-			LastOnline:     time.Now(),
+			CreatedAt:      time.Now().UTC(),
+			UpdatedAt:      time.Now().UTC(),
+			LastOnline:     time.Now().UTC(),
 			Images:         imagesProfile,
 		}
 		newProfile, err := h.uc.Add(ctf.Context(), profileDto)
@@ -667,14 +667,10 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 			Filter:         f,
 			Like:           lDao,
 		}
-		now := time.Now().UTC()
-		fmt.Println("p.LastOnline: ", p.LastOnline)
-		fmt.Println("now: ", now)
-		res := now.Unix() - p.LastOnline.Unix()
-		fmt.Println("res: ", res)
-		//if elapsed.Minutes() < 5 {
-		//	response.IsOnline = true
-		//}
+		elapsed := time.Since(p.LastOnline)
+		if elapsed.Minutes() < 5 {
+			response.IsOnline = true
+		}
 		return r.WrapOk(ctf, response)
 	}
 }
@@ -801,8 +797,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 					Name:      file.Filename,
 					Url:       newFilePath,
 					Size:      file.Size,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					CreatedAt: time.Now().UTC(),
+					UpdatedAt: time.Now().UTC(),
 					IsDeleted: false,
 					IsBlocked: false,
 					IsPrimary: false,
@@ -827,8 +823,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				IsShowDistance: profileInDB.IsShowDistance,
 				IsInvisible:    profileInDB.IsInvisible,
 				CreatedAt:      profileInDB.CreatedAt,
-				UpdatedAt:      time.Now(),
-				LastOnline:     time.Now(),
+				UpdatedAt:      time.Now().UTC(),
+				LastOnline:     time.Now().UTC(),
 				Images:         imagesProfile,
 			}
 		} else {
@@ -848,8 +844,8 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 				IsShowDistance: profileInDB.IsShowDistance,
 				IsInvisible:    profileInDB.IsInvisible,
 				CreatedAt:      profileInDB.CreatedAt,
-				UpdatedAt:      time.Now(),
-				LastOnline:     time.Now(),
+				UpdatedAt:      time.Now().UTC(),
+				LastOnline:     time.Now().UTC(),
 			}
 		}
 		profileUpdated, err := h.uc.Update(ctf.Context(), profileDto)
@@ -1077,7 +1073,7 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 					Url:       "",
 					Size:      0,
 					CreatedAt: i.CreatedAt,
-					UpdatedAt: time.Now(),
+					UpdatedAt: time.Now().UTC(),
 					IsDeleted: true,
 					IsBlocked: i.IsBlocked,
 					IsPrimary: i.IsPrimary,
@@ -1174,8 +1170,8 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 			IsShowDistance: false,
 			IsInvisible:    false,
 			CreatedAt:      profileInDB.CreatedAt,
-			UpdatedAt:      time.Now(),
-			LastOnline:     time.Now(),
+			UpdatedAt:      time.Now().UTC(),
+			LastOnline:     time.Now().UTC(),
 		}
 		_, err = h.uc.Delete(ctf.Context(), profileDto)
 		if err != nil {
@@ -1255,7 +1251,7 @@ func (h *HandlerProfile) DeleteProfileImageHandler() fiber.Handler {
 			Url:       "",
 			Size:      0,
 			CreatedAt: imageInDB.CreatedAt,
-			UpdatedAt: time.Now(),
+			UpdatedAt: time.Now().UTC(),
 			IsDeleted: true,
 			IsBlocked: imageInDB.IsBlocked,
 			IsPrimary: imageInDB.IsPrimary,
@@ -1313,8 +1309,8 @@ func (h *HandlerProfile) AddReviewHandler() fiber.Handler {
 			Rating:     float32(rating),
 			HasDeleted: false,
 			HasEdited:  false,
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
+			CreatedAt:  time.Now().UTC(),
+			UpdatedAt:  time.Now().UTC(),
 		}
 		review, err := h.uc.AddReview(ctf.Context(), reviewDto)
 		if err != nil {
@@ -1372,7 +1368,7 @@ func (h *HandlerProfile) UpdateReviewHandler() fiber.Handler {
 			HasDeleted: reviewInDB.HasDeleted,
 			HasEdited:  true,
 			CreatedAt:  reviewInDB.CreatedAt,
-			UpdatedAt:  time.Now(),
+			UpdatedAt:  time.Now().UTC(),
 		}
 		review, err := h.uc.UpdateReview(ctf.Context(), reviewDto)
 		if err != nil {
@@ -1418,7 +1414,7 @@ func (h *HandlerProfile) DeleteReviewHandler() fiber.Handler {
 			HasDeleted: true,
 			HasEdited:  reviewInDB.HasEdited,
 			CreatedAt:  reviewInDB.CreatedAt,
-			UpdatedAt:  time.Now(),
+			UpdatedAt:  time.Now().UTC(),
 		}
 		review, err := h.uc.DeleteReview(ctf.Context(), reviewDto)
 		if err != nil {
@@ -1494,8 +1490,8 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 			ProfileID: p.ID,
 			HumanID:   humanID,
 			IsLiked:   true,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 		}
 		like, err := h.uc.AddLike(ctf.Context(), likeDto)
 		if err != nil {
@@ -1544,7 +1540,7 @@ func (h *HandlerProfile) DeleteLikeHandler() fiber.Handler {
 			HumanID:   l.HumanID,
 			IsLiked:   false,
 			CreatedAt: l.CreatedAt,
-			UpdatedAt: time.Now(),
+			UpdatedAt: time.Now().UTC(),
 		}
 		like, err := h.uc.DeleteLike(ctf.Context(), likeDto)
 		if err != nil {
@@ -1593,7 +1589,7 @@ func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
 			HumanID:   l.HumanID,
 			IsLiked:   true,
 			CreatedAt: l.CreatedAt,
-			UpdatedAt: time.Now(),
+			UpdatedAt: time.Now().UTC(),
 		}
 		like, err := h.uc.UpdateLike(ctf.Context(), likeDto)
 		if err != nil {
@@ -1630,8 +1626,8 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 			ProfileID:     p.ID,
 			BlockedUserID: blockedUserID,
 			IsBlocked:     true,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     time.Now().UTC(),
+			UpdatedAt:     time.Now().UTC(),
 		}
 		block, err := h.uc.AddBlock(ctf.Context(), blockDto)
 		if err != nil {
@@ -1643,8 +1639,8 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 			ProfileID:     blockedUserID,
 			BlockedUserID: p.ID,
 			IsBlocked:     true,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     time.Now().UTC(),
+			UpdatedAt:     time.Now().UTC(),
 		}
 		_, err = h.uc.AddBlock(ctf.Context(), blockForBlockedUserDto)
 		if err != nil {
@@ -1693,7 +1689,7 @@ func (h *HandlerProfile) UpdateBlockHandler() fiber.Handler {
 			BlockedUserID: blockID,
 			IsBlocked:     false,
 			CreatedAt:     b.CreatedAt,
-			UpdatedAt:     time.Now(),
+			UpdatedAt:     time.Now().UTC(),
 		}
 		like, err := h.uc.UpdateBlock(ctf.Context(), blockDto)
 		if err != nil {
@@ -1730,8 +1726,8 @@ func (h *HandlerProfile) AddComplaintHandler() fiber.Handler {
 			ProfileID:       p.ID,
 			ComplaintUserID: complaintUserId,
 			Reason:          req.Reason,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			CreatedAt:       time.Now().UTC(),
+			UpdatedAt:       time.Now().UTC(),
 		}
 		complaint, err := h.uc.AddComplaint(ctf.Context(), complaintDto)
 		if err != nil {
@@ -1743,8 +1739,8 @@ func (h *HandlerProfile) AddComplaintHandler() fiber.Handler {
 			ProfileID:     p.ID,
 			BlockedUserID: complaintUserId,
 			IsBlocked:     true,
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     time.Now().UTC(),
+			UpdatedAt:     time.Now().UTC(),
 		}
 		_, err = h.uc.AddBlock(ctf.Context(), blockDto)
 		if err != nil {
@@ -1797,8 +1793,8 @@ func (h *HandlerProfile) AddComplaintHandler() fiber.Handler {
 
 // filterComplaintsByCurrentMonth возвращает кол-во жалоб за текущий месяц
 func filterComplaintsByCurrentMonth(complaints []*profile.ComplaintProfile) []*profile.ComplaintProfile {
-	currentMonth := time.Now().Month()
-	currentYear := time.Now().Year()
+	currentMonth := time.Now().UTC().Month()
+	currentYear := time.Now().UTC().Year()
 	filteredComplaints := make([]*profile.ComplaintProfile, 0)
 	for _, complaint := range complaints {
 		if complaint.CreatedAt.Month() == currentMonth && complaint.CreatedAt.Year() == currentYear {
