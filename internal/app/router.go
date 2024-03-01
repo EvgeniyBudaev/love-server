@@ -13,9 +13,7 @@ func InitPublicRoutes(grp fiber.Router, imh *user.HandlerUser, ph *profile.Handl
 
 	grp.Post("/profile/add", ph.AddProfileHandler())
 	grp.Get("/profile/list", ph.GetProfileListHandler())
-	grp.Get("/profile/telegram/:id", ph.GetProfileByTelegramIDHandler())
 	grp.Get("/profile/session/:id", ph.GetProfileBySessionIDHandler())
-	grp.Get("/profile/:id", ph.GetProfileByIDHandler())
 	grp.Get("/profile/detail/:id", ph.GetProfileDetailHandler())
 	grp.Post("/profile/edit", ph.UpdateProfileHandler())
 	grp.Post("/profile/delete", ph.DeleteProfileHandler())

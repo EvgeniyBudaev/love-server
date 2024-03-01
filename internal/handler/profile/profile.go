@@ -432,108 +432,6 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 	}
 }
 
-func (h *HandlerProfile) GetProfileByTelegramIDHandler() fiber.Handler {
-	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("GET /api/v1/profile/telegram/:id")
-		idStr := ctf.Params("id")
-		telegramID, err := strconv.ParseUint(idStr, 10, 64)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method ParseUint by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		params := profile.QueryParamsGetProfileByTelegramID{}
-		if err := ctf.QueryParser(&params); err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method QueryParser by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		p, err := h.uc.FindByTelegramId(ctf.Context(), telegramID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindById by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method UpdateLastOnline by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		latitudeStr := params.Latitude
-		longitudeStr := params.Longitude
-		if latitudeStr != "" && longitudeStr != "" {
-			latitude, err := strconv.ParseFloat(latitudeStr, 64)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByTelegramIDHandler, method ParseFloat height by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-			longitude, err := strconv.ParseFloat(longitudeStr, 64)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByTelegramIDHandler, method ParseFloat height by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-			point := &profile.Point{
-				Latitude:  latitude,
-				Longitude: longitude,
-			}
-			navigatorDto := &profile.NavigatorProfile{
-				ProfileID: p.ID,
-				Location:  point,
-			}
-			_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByTelegramIDHandler, method UpdateNavigator by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-		}
-		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindTelegramByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		f, err := h.uc.FindFilterByProfileID(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method FindFilterByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		i, err := h.uc.SelectListPublicImage(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByTelegramIDHandler, method SelectListPublicImage by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		response := &profile.ResponseProfile{
-			ID:        p.ID,
-			SessionID: p.SessionID,
-			Image:     nil,
-			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
-			Filter: &profile.ResponseFilterProfile{
-				ID:           f.ID,
-				SearchGender: f.SearchGender,
-				LookingFor:   f.LookingFor,
-				AgeFrom:      f.AgeFrom,
-				AgeTo:        f.AgeTo,
-				Distance:     f.Distance,
-				Page:         f.Page,
-				Size:         f.Size,
-			},
-		}
-		if len(i) > 0 {
-			i := profile.ResponseImageProfile{
-				Url: i[0].Url,
-			}
-			response.Image = &i
-		}
-		return r.WrapOk(ctf, response)
-	}
-}
-
 func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		h.logger.Info("GET /api/v1/profile/session/:id")
@@ -632,108 +530,6 @@ func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 	}
 }
 
-func (h *HandlerProfile) GetProfileByIDHandler() fiber.Handler {
-	return func(ctf *fiber.Ctx) error {
-		h.logger.Info("GET /api/v1/profile/:id")
-		idStr := ctf.Params("id")
-		id, err := strconv.ParseUint(idStr, 10, 64)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method ParseUint by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		params := profile.QueryParamsGetProfileByID{}
-		if err := ctf.QueryParser(&params); err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method QueryParser by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		p, err := h.uc.FindById(ctf.Context(), id)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method FindById by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method UpdateLastOnline by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		latitudeStr := params.Latitude
-		longitudeStr := params.Longitude
-		if latitudeStr != "" && longitudeStr != "" {
-			latitude, err := strconv.ParseFloat(latitudeStr, 64)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByIDHandler, method ParseFloat height by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-			longitude, err := strconv.ParseFloat(longitudeStr, 64)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByIDHandler, method ParseFloat height by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-			point := &profile.Point{
-				Latitude:  latitude,
-				Longitude: longitude,
-			}
-			navigatorDto := &profile.NavigatorProfile{
-				ProfileID: p.ID,
-				Location:  point,
-			}
-			_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
-			if err != nil {
-				h.logger.Debug("error func GetProfileByIDHandler, method UpdateNavigator by path"+
-					" internal/handler/profile/profile.go", zap.Error(err))
-				return r.WrapError(ctf, err, http.StatusBadRequest)
-			}
-		}
-		t, err := h.uc.FindTelegramByProfileID(ctf.Context(), id)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method FindTelegramByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		f, err := h.uc.FindFilterByProfileID(ctf.Context(), id)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method FindFilterByProfileID by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		i, err := h.uc.SelectListPublicImage(ctf.Context(), id)
-		if err != nil {
-			h.logger.Debug("error func GetProfileByIDHandler, method SelectListPublicImage by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
-		response := &profile.ResponseProfile{
-			ID:        p.ID,
-			SessionID: p.SessionID,
-			Image:     nil,
-			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
-			Filter: &profile.ResponseFilterProfile{
-				ID:           f.ID,
-				SearchGender: f.SearchGender,
-				LookingFor:   f.LookingFor,
-				AgeFrom:      f.AgeFrom,
-				AgeTo:        f.AgeTo,
-				Distance:     f.Distance,
-				Page:         f.Page,
-				Size:         f.Size,
-			},
-		}
-		if len(i) > 0 {
-			i := profile.ResponseImageProfile{
-				Url: i[0].Url,
-			}
-			response.Image = &i
-		}
-		return r.WrapOk(ctf, response)
-	}
-}
-
 func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 	return func(ctf *fiber.Ctx) error {
 		h.logger.Info("GET /api/v1/profile/detail/:id")
@@ -762,7 +558,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
+		err = h.uc.UpdateLastOnline(ctf.Context(), v.ID)
 		if err != nil {
 			h.logger.Debug("error func GetProfileDetailHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
@@ -788,7 +584,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 				Longitude: longitude,
 			}
 			navigatorDto := &profile.NavigatorProfile{
-				ProfileID: p.ID,
+				ProfileID: v.ID,
 				Location:  point,
 			}
 			_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
@@ -861,6 +657,7 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 			IsPremium:      p.IsPremium,
 			IsShowDistance: p.IsShowDistance,
 			IsInvisible:    p.IsInvisible,
+			IsOnline:       false,
 			CreatedAt:      p.CreatedAt,
 			UpdatedAt:      p.UpdatedAt,
 			LastOnline:     p.LastOnline,
@@ -870,6 +667,14 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 			Filter:         f,
 			Like:           lDao,
 		}
+		now := time.Now().UTC()
+		fmt.Println("p.LastOnline: ", p.LastOnline)
+		fmt.Println("now: ", now)
+		res := now.Unix() - p.LastOnline.Unix()
+		fmt.Println("res: ", res)
+		//if elapsed.Minutes() < 5 {
+		//	response.IsOnline = true
+		//}
 		return r.WrapOk(ctf, response)
 	}
 }

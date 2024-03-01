@@ -269,9 +269,14 @@ func (r *RepositoryProfile) SelectList(
 		}
 		lp := profile.ContentListProfile{
 			ID:         p.ID,
+			IsOnline:   false,
 			LastOnline: p.LastOnline,
 			Image:      nil,
 			Navigator:  n,
+		}
+		now := time.Now()
+		if now.Sub(p.LastOnline).Minutes() < 5 {
+			lp.IsOnline = true
 		}
 		if len(images) > 0 {
 			i := profile.ResponseImageProfile{

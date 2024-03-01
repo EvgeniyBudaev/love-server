@@ -97,6 +97,7 @@ type RequestDeleteProfileImage struct {
 
 type ContentListProfile struct {
 	ID         uint64                    `json:"id"`
+	IsOnline   bool                      `json:"isOnline"`
 	LastOnline time.Time                 `json:"lastOnline"`
 	Image      *ResponseImageProfile     `json:"image"`
 	Navigator  *ResponseNavigatorProfile `json:"navigator"`
@@ -132,6 +133,7 @@ type ResponseProfileDetail struct {
 	IsPremium      bool                      `json:"isPremium"`
 	IsShowDistance bool                      `json:"isShowDistance"`
 	IsInvisible    bool                      `json:"isInvisible"`
+	IsOnline       bool                      `json:"isOnline"`
 	CreatedAt      time.Time                 `json:"createdAt"`
 	UpdatedAt      time.Time                 `json:"updatedAt"`
 	LastOnline     time.Time                 `json:"lastOnline"`
