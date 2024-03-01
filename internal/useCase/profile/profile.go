@@ -50,6 +50,10 @@ type Store interface {
 	AddBlock(ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error)
 	UpdateBlock(ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error)
 	FindBlockByID(ctx context.Context, id uint64) (*profile.BlockedProfile, bool, error)
+	AddComplaint(ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error)
+	UpdateComplaint(ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error)
+	FindComplaintByID(ctx context.Context, id uint64) (*profile.ComplaintProfile, bool, error)
+	SelectListComplaintByID(ctx context.Context, complaintUserID uint64) ([]*profile.ComplaintProfile, error)
 }
 
 type UseCaseProfile struct {
@@ -461,6 +465,7 @@ func (u *UseCaseProfile) AddBlock(
 	}
 	return response, nil
 }
+
 func (u *UseCaseProfile) UpdateBlock(
 	ctx context.Context, p *profile.BlockedProfile) (*profile.BlockedProfile, error) {
 	response, err := u.profileRepo.UpdateBlock(ctx, p)
@@ -480,4 +485,47 @@ func (u *UseCaseProfile) FindBlockByID(ctx context.Context, id uint64) (*profile
 		return nil, isExist, err
 	}
 	return response, isExist, nil
+}
+
+func (u *UseCaseProfile) AddComplaint(
+	ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error) {
+	response, err := u.profileRepo.AddComplaint(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func AddComplaint, method AddComplaint by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) UpdateComplaint(
+	ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error) {
+	response, err := u.profileRepo.UpdateComplaint(ctx, p)
+	if err != nil {
+		u.logger.Debug("error func UpdateComplaint, method UpdateComplaint by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
+}
+
+func (u *UseCaseProfile) FindComplaintByID(ctx context.Context, id uint64) (*profile.ComplaintProfile, bool, error) {
+	response, isExist, err := u.profileRepo.FindComplaintByID(ctx, id)
+	if err != nil {
+		u.logger.Debug("error func FindComplaintByID, method FindComplaintByID by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, isExist, err
+	}
+	return response, isExist, nil
+}
+
+func (u *UseCaseProfile) SelectListComplaintByID(
+	ctx context.Context, complaintUserID uint64) ([]*profile.ComplaintProfile, error) {
+	response, err := u.profileRepo.SelectListComplaintByID(ctx, complaintUserID)
+	if err != nil {
+		u.logger.Debug("error func SelectListComplaintByID, method SelectListComplaintByID by path"+
+			" internal/useCase/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return response, nil
 }

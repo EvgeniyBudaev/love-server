@@ -24,7 +24,6 @@ type Profile struct {
 	UpdatedAt      time.Time                 `json:"updatedAt"`
 	LastOnline     time.Time                 `json:"lastOnline"`
 	Images         []*ImageProfile           `json:"images"`
-	Complaints     []*ComplaintProfile       `json:"complaints"`
 	Telegram       *TelegramProfile          `json:"telegram"`
 	Navigator      *ResponseNavigatorProfile `json:"navigator"`
 	Filter         *FilterProfile            `json:"filters"`
@@ -111,6 +110,8 @@ type ResponseListProfile struct {
 type ResponseProfile struct {
 	ID        uint64                   `json:"id"`
 	SessionID string                   `json:"sessionId"`
+	IsDeleted bool                     `json:"isDeleted"`
+	IsBlocked bool                     `json:"isBlocked"`
 	Image     *ResponseImageProfile    `json:"image"`
 	Telegram  *ResponseTelegramProfile `json:"telegram"`
 	Filter    *ResponseFilterProfile   `json:"filter"`
@@ -135,17 +136,10 @@ type ResponseProfileDetail struct {
 	UpdatedAt      time.Time                 `json:"updatedAt"`
 	LastOnline     time.Time                 `json:"lastOnline"`
 	Images         []*ImageProfile           `json:"images"`
-	Complaints     []*ComplaintProfile       `json:"complaints"`
 	Telegram       *TelegramProfile          `json:"telegram"`
 	Navigator      *ResponseNavigatorProfile `json:"navigator"`
 	Filter         *FilterProfile            `json:"filters"`
 	Like           *ResponseLikeProfile      `json:"like"`
-}
-
-type ComplaintProfile struct {
-	ID        uint64 `json:"id"`
-	ProfileID uint64 `json:"profileId"`
-	Reason    string `json:"reason"`
 }
 
 type QueryParamsProfileList struct {
@@ -360,4 +354,19 @@ type RequestAddBlock struct {
 
 type RequestUpdateBlock struct {
 	ID string `json:"id"`
+}
+
+type ComplaintProfile struct {
+	ID              uint64    `json:"id"`
+	ProfileID       uint64    `json:"profileId"`
+	ComplaintUserID uint64    `json:"complaintUserId"`
+	Reason          string    `json:"reason"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
+type RequestAddComplaint struct {
+	SessionID       string `json:"sessionId"`
+	ComplaintUserID string `json:"complaintUserId"`
+	Reason          string `json:"reason"`
 }

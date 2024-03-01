@@ -10,13 +10,13 @@ func InitPublicRoutes(grp fiber.Router, imh *user.HandlerUser, ph *profile.Handl
 	grp.Post("/user/register", imh.PostRegisterHandler())
 	grp.Put("/user/update", imh.UpdateUserHandler())
 	grp.Delete("/user/delete", imh.DeleteUserHandler())
+
 	grp.Post("/profile/add", ph.AddProfileHandler())
 	grp.Get("/profile/list", ph.GetProfileListHandler())
 	grp.Get("/profile/telegram/:id", ph.GetProfileByTelegramIDHandler())
 	grp.Get("/profile/session/:id", ph.GetProfileBySessionIDHandler())
 	grp.Get("/profile/:id", ph.GetProfileByIDHandler())
 	grp.Get("/profile/detail/:id", ph.GetProfileDetailHandler())
-
 	grp.Post("/profile/edit", ph.UpdateProfileHandler())
 	grp.Post("/profile/delete", ph.DeleteProfileHandler())
 	grp.Post("/profile/image/delete", ph.DeleteProfileImageHandler())
@@ -33,6 +33,8 @@ func InitPublicRoutes(grp fiber.Router, imh *user.HandlerUser, ph *profile.Handl
 
 	grp.Post("/block/add", ph.AddBlockHandler())
 	grp.Put("/block/update", ph.UpdateBlockHandler())
+
+	grp.Post("/complaint/add", ph.AddComplaintHandler())
 }
 
 func InitProtectedRoutes(grp fiber.Router, ph *profile.HandlerProfile) {

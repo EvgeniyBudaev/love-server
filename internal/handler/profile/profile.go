@@ -607,6 +607,8 @@ func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 		response := &profile.ResponseProfile{
 			ID:        p.ID,
 			SessionID: p.SessionID,
+			IsDeleted: p.IsDeleted,
+			IsBlocked: p.IsBlocked,
 			Image:     nil,
 			Telegram:  &profile.ResponseTelegramProfile{TelegramID: t.TelegramID},
 			Filter: &profile.ResponseFilterProfile{
@@ -1815,7 +1817,7 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 		}
 		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
-			h.logger.Debug("error func AddBlockHandler, method FindByKeycloakID by path "+
+			h.logger.Debug("error func AddBlockHandler, method FindBySessionID by path "+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1828,7 +1830,7 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 		}
 		block, err := h.uc.AddBlock(ctf.Context(), blockDto)
 		if err != nil {
-			h.logger.Debug("error func AddBlockHandler, method AddLike by path"+
+			h.logger.Debug("error func AddBlockHandler, method AddBlock by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1841,7 +1843,7 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 		}
 		_, err = h.uc.AddBlock(ctf.Context(), blockForBlockedUserDto)
 		if err != nil {
-			h.logger.Debug("error func AddBlockHandler, method AddLike by path"+
+			h.logger.Debug("error func AddBlockHandler, method AddBlock by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1896,6 +1898,109 @@ func (h *HandlerProfile) UpdateBlockHandler() fiber.Handler {
 		}
 		return r.WrapCreated(ctf, like)
 	}
+}
+
+func (h *HandlerProfile) AddComplaintHandler() fiber.Handler {
+	return func(ctf *fiber.Ctx) error {
+		h.logger.Info("POST /api/v1/complaint/add")
+		req := profile.RequestAddComplaint{}
+		if err := ctf.BodyParser(&req); err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method BodyParser by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		complaintUserId, err := strconv.ParseUint(req.ComplaintUserID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method ParseUint by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method FindBySessionID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		complaintDto := &profile.ComplaintProfile{
+			ProfileID:       p.ID,
+			ComplaintUserID: complaintUserId,
+			Reason:          req.Reason,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		}
+		complaint, err := h.uc.AddComplaint(ctf.Context(), complaintDto)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method AddComplaint by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		blockDto := &profile.BlockedProfile{
+			ProfileID:     p.ID,
+			BlockedUserID: complaintUserId,
+			IsBlocked:     true,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+		_, err = h.uc.AddBlock(ctf.Context(), blockDto)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method AddBlock by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		listComplaint, err := h.uc.SelectListComplaintByID(ctf.Context(), complaintUserId)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandler, method SelectListComplaintByID by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		if len(filterComplaintsByCurrentMonth(listComplaint)) > 1 {
+			p, err := h.uc.FindById(ctf.Context(), complaintUserId)
+			if err != nil {
+				h.logger.Debug("error func AddComplaintHandler, method FindById by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			profileDto := &profile.Profile{
+				ID:             p.ID,
+				SessionID:      p.SessionID,
+				DisplayName:    p.DisplayName,
+				Birthday:       p.Birthday,
+				Gender:         p.Gender,
+				Location:       p.Location,
+				Description:    p.Description,
+				Height:         p.Height,
+				Weight:         p.Weight,
+				IsDeleted:      p.IsDeleted,
+				IsBlocked:      true,
+				IsPremium:      p.IsPremium,
+				IsShowDistance: p.IsShowDistance,
+				IsInvisible:    p.IsInvisible,
+				CreatedAt:      p.CreatedAt,
+				UpdatedAt:      p.UpdatedAt,
+				LastOnline:     p.LastOnline,
+			}
+			_, err = h.uc.Update(ctf.Context(), profileDto)
+			if err != nil {
+				h.logger.Debug("error func AddComplaintHandler, method Update by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+		}
+		return r.WrapCreated(ctf, complaint)
+	}
+}
+
+// filterComplaintsByCurrentMonth возвращает кол-во жалоб за текущий месяц
+func filterComplaintsByCurrentMonth(complaints []*profile.ComplaintProfile) []*profile.ComplaintProfile {
+	currentMonth := time.Now().Month()
+	currentYear := time.Now().Year()
+	filteredComplaints := make([]*profile.ComplaintProfile, 0)
+	for _, complaint := range complaints {
+		if complaint.CreatedAt.Month() == currentMonth && complaint.CreatedAt.Year() == currentYear {
+			filteredComplaints = append(filteredComplaints, complaint)
+		}
+	}
+	return filteredComplaints
 }
 
 func replaceExtension(filename string) string {

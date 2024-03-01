@@ -1049,3 +1049,85 @@ func (r *RepositoryProfile) FindBlockByID(ctx context.Context, id uint64) (*prof
 	}
 	return &p, true, nil
 }
+
+func (r *RepositoryProfile) AddComplaint(
+	ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error) {
+	query := `INSERT INTO profile_complaints (profile_id, complaint_user_id, reason, created_at, updated_at)
+			  VALUES ($1, $2, $3, $4, $5)
+			  RETURNING id`
+	err := r.db.QueryRowContext(ctx, query, &p.ProfileID, &p.ComplaintUserID, &p.Reason,
+		&p.CreatedAt, &p.UpdatedAt).Scan(&p.ID)
+	if err != nil {
+		r.logger.Debug("error func AddComplaint, method QueryRowContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *RepositoryProfile) UpdateComplaint(
+	ctx context.Context, p *profile.ComplaintProfile) (*profile.ComplaintProfile, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.logger.Debug("error func UpdateComplaint, method Begin by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer tx.Rollback()
+	query := `UPDATE profile_complaints
+			  SET profile_id=$1, complaint_user_id=$2, reason=$3, created_at=$4, updated_at=$5
+			  WHERE id=$6`
+	_, err = r.db.ExecContext(ctx, query, &p.ProfileID, &p.ComplaintUserID, &p.Reason, &p.CreatedAt,
+		&p.UpdatedAt, &p.ID)
+	if err != nil {
+		r.logger.Debug("error func UpdateComplaint, method ExecContext by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	tx.Commit()
+	return p, nil
+}
+
+func (r *RepositoryProfile) FindComplaintByID(ctx context.Context, id uint64) (*profile.ComplaintProfile, bool, error) {
+	p := profile.ComplaintProfile{}
+	query := `SELECT id, profile_id, complaint_user_id, reason, created_at, updated_at
+			  FROM profile_complaints
+			  WHERE id=$1`
+	err := r.db.QueryRowContext(ctx, query, id).
+		Scan(&p.ID, &p.ProfileID, &p.ComplaintUserID, &p.Reason, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		r.logger.Debug("error func FindComplaintByID, method Scan by path"+
+			" internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, false, err
+	}
+	return &p, true, nil
+}
+
+func (r *RepositoryProfile) SelectListComplaintByID(
+	ctx context.Context, complaintUserID uint64) ([]*profile.ComplaintProfile, error) {
+	query := `SELECT id, profile_id, complaint_user_id, reason, created_at, updated_at
+	FROM profile_complaints
+	WHERE complaint_user_id=$1`
+	rows, err := r.db.QueryContext(ctx, query, complaintUserID)
+	if err != nil {
+		r.logger.Debug("error func SelectListComplaintByID,"+
+			" method QueryContext by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+	list := make([]*profile.ComplaintProfile, 0)
+	for rows.Next() {
+		p := profile.ComplaintProfile{}
+		err := rows.Scan(&p.ID, &p.ProfileID, &p.ComplaintUserID, &p.Reason, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			r.logger.Debug("error func SelectListComplaintByID,"+
+				" method Scan by path internal/adapter/psqlRepo/profile/profile.go", zap.Error(err))
+			continue
+		}
+		list = append(list, &p)
+	}
+	return list, nil
+}
