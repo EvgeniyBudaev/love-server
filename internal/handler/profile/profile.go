@@ -371,8 +371,6 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 		}
 		latitudeStr := params.Latitude
 		longitudeStr := params.Longitude
-		fmt.Println("List latitudeStr:", latitudeStr)
-		fmt.Println("List longitudeStr:", longitudeStr)
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
@@ -488,8 +486,6 @@ func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 		}
 		latitudeStr := params.Latitude
 		longitudeStr := params.Longitude
-		fmt.Println("Get session latitudeStr:", latitudeStr)
-		fmt.Println("Get session longitudeStr:", longitudeStr)
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
@@ -600,8 +596,6 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 		}
 		latitudeStr := params.Latitude
 		longitudeStr := params.Longitude
-		fmt.Println("Detail latitudeStr:", latitudeStr)
-		fmt.Println("Detail longitudeStr:", longitudeStr)
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
