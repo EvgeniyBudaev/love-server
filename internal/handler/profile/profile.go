@@ -363,6 +363,44 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
+		if err != nil {
+			h.logger.Debug("error func GetProfileListHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		latitudeStr := params.Latitude
+		longitudeStr := params.Longitude
+		fmt.Println("List latitudeStr:", latitudeStr)
+		fmt.Println("List longitudeStr:", longitudeStr)
+		if latitudeStr != "" && longitudeStr != "" {
+			latitude, err := strconv.ParseFloat(latitudeStr, 64)
+			if err != nil {
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method ParseFloat height by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			longitude, err := strconv.ParseFloat(longitudeStr, 64)
+			if err != nil {
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method ParseFloat height by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+			point := &profile.Point{
+				Latitude:  latitude,
+				Longitude: longitude,
+			}
+			navigatorDto := &profile.NavigatorProfile{
+				ProfileID: p.ID,
+				Location:  point,
+			}
+			_, err = h.uc.UpdateNavigator(ctf.Context(), navigatorDto)
+			if err != nil {
+				h.logger.Debug("error func GetProfileBySessionIDHandler, method UpdateNavigator by path"+
+					" internal/handler/profile/profile.go", zap.Error(err))
+				return r.WrapError(ctf, err, http.StatusBadRequest)
+			}
+		}
 		f, err := h.uc.FindFilterByProfileID(ctf.Context(), p.ID)
 		if err != nil {
 			h.logger.Debug("error func GetProfileListHandler, method FindFilterByProfileID by path"+
@@ -416,12 +454,6 @@ func (h *HandlerProfile) GetProfileListHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
-		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
-		if err != nil {
-			h.logger.Debug("error func GetProfileListHandler, method UpdateLastOnline by path"+
-				" internal/handler/profile/profile.go", zap.Error(err))
-			return r.WrapError(ctf, err, http.StatusBadRequest)
-		}
 		response, err := h.uc.SelectList(ctf.Context(), &params)
 		if err != nil {
 			h.logger.Debug("error func GetProfileListHandler, method SelectList by path"+
@@ -456,6 +488,8 @@ func (h *HandlerProfile) GetProfileBySessionIDHandler() fiber.Handler {
 		}
 		latitudeStr := params.Latitude
 		longitudeStr := params.Longitude
+		fmt.Println("Get session latitudeStr:", latitudeStr)
+		fmt.Println("Get session longitudeStr:", longitudeStr)
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
@@ -566,6 +600,8 @@ func (h *HandlerProfile) GetProfileDetailHandler() fiber.Handler {
 		}
 		latitudeStr := params.Latitude
 		longitudeStr := params.Longitude
+		fmt.Println("Detail latitudeStr:", latitudeStr)
+		fmt.Println("Detail longitudeStr:", longitudeStr)
 		if latitudeStr != "" && longitudeStr != "" {
 			latitude, err := strconv.ParseFloat(latitudeStr, 64)
 			if err != nil {
@@ -706,6 +742,12 @@ func (h *HandlerProfile) UpdateProfileHandler() fiber.Handler {
 			msg := errors.Wrap(err, "user has already been blocked")
 			err = errorDomain.NewCustomError(msg, http.StatusNotFound)
 			return r.WrapError(ctf, err, http.StatusNotFound)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), profileInDB.ID)
+		if err != nil {
+			h.logger.Debug("error func UpdateProfileHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
 		filePath := fmt.Sprintf("static/uploads/profile/%s/images/defaultImage.jpg", req.UserName)
 		directoryPath := fmt.Sprintf("static/uploads/profile/%s/images", req.UserName)
@@ -1057,6 +1099,12 @@ func (h *HandlerProfile) DeleteProfileHandler() fiber.Handler {
 			err = errorDomain.NewCustomError(msg, http.StatusNotFound)
 			return r.WrapError(ctf, err, http.StatusNotFound)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), profileInDB.ID)
+		if err != nil {
+			h.logger.Debug("error func DeleteProfileHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		imageList, err := h.uc.SelectListImage(ctf.Context(), profileID)
 		if len(imageList) > 0 {
 			for _, i := range imageList {
@@ -1297,6 +1345,12 @@ func (h *HandlerProfile) AddReviewHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), profileID)
+		if err != nil {
+			h.logger.Debug("error func AddReviewHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		rating, err := strconv.ParseFloat(req.Rating, 32)
 		if err != nil {
 			h.logger.Debug("error func AddReviewHandler, method ParseUint roomIdStr by path "+
@@ -1340,6 +1394,12 @@ func (h *HandlerProfile) UpdateReviewHandler() fiber.Handler {
 		profileID, err := strconv.ParseUint(req.ProfileID, 10, 64)
 		if err != nil {
 			h.logger.Debug("error func UpdateReviewHandler, method ParseUint roomIdStr by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), profileID)
+		if err != nil {
+			h.logger.Debug("error func UpdateReviewHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1455,6 +1515,18 @@ func (h *HandlerProfile) GetReviewListHandler() fiber.Handler {
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
+		profileID, err := strconv.ParseUint(params.ProfileID, 10, 64)
+		if err != nil {
+			h.logger.Debug("error func GetReviewListHandler, method ParseUint roomIdStr by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), profileID)
+		if err != nil {
+			h.logger.Debug("error func GetReviewListHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		response, err := h.uc.SelectReviewList(ctf.Context(), &params)
 		if err != nil {
 			h.logger.Debug("error func GetReviewListHandler, method SelectList by path"+
@@ -1483,6 +1555,12 @@ func (h *HandlerProfile) AddLikeHandler() fiber.Handler {
 		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
 			h.logger.Debug("error func AddLikeHandler, method FindByKeycloakID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
+		if err != nil {
+			h.logger.Debug("error func AddLikeHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1534,6 +1612,12 @@ func (h *HandlerProfile) DeleteLikeHandler() fiber.Handler {
 			}
 			return ctf.Status(http.StatusNotFound).JSON(msg)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), l.ProfileID)
+		if err != nil {
+			h.logger.Debug("error func DeleteLikeHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		likeDto := &profile.LikeProfile{
 			ID:        likeID,
 			ProfileID: l.ProfileID,
@@ -1583,6 +1667,12 @@ func (h *HandlerProfile) UpdateLikeHandler() fiber.Handler {
 			}
 			return ctf.Status(http.StatusNotFound).JSON(msg)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), l.ProfileID)
+		if err != nil {
+			h.logger.Debug("error func UpdateLikeHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		likeDto := &profile.LikeProfile{
 			ID:        likeID,
 			ProfileID: l.ProfileID,
@@ -1619,6 +1709,12 @@ func (h *HandlerProfile) AddBlockHandler() fiber.Handler {
 		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
 			h.logger.Debug("error func AddBlockHandler, method FindBySessionID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
+		if err != nil {
+			h.logger.Debug("error func AddBlockHandler, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}
@@ -1683,6 +1779,12 @@ func (h *HandlerProfile) UpdateBlockHandler() fiber.Handler {
 			}
 			return ctf.Status(http.StatusNotFound).JSON(msg)
 		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), b.ProfileID)
+		if err != nil {
+			h.logger.Debug("error func UpdateBlockHandler, method UpdateLastOnline by path"+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
 		blockDto := &profile.BlockedProfile{
 			ID:            blockID,
 			ProfileID:     b.ProfileID,
@@ -1719,6 +1821,12 @@ func (h *HandlerProfile) AddComplaintHandler() fiber.Handler {
 		p, err := h.uc.FindBySessionID(ctf.Context(), req.SessionID)
 		if err != nil {
 			h.logger.Debug("error func AddComplaintHandler, method FindBySessionID by path "+
+				" internal/handler/profile/profile.go", zap.Error(err))
+			return r.WrapError(ctf, err, http.StatusBadRequest)
+		}
+		err = h.uc.UpdateLastOnline(ctf.Context(), p.ID)
+		if err != nil {
+			h.logger.Debug("error func AddComplaintHandle, method UpdateLastOnline by path"+
 				" internal/handler/profile/profile.go", zap.Error(err))
 			return r.WrapError(ctf, err, http.StatusBadRequest)
 		}

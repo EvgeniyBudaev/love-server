@@ -152,6 +152,8 @@ type QueryParamsProfileList struct {
 	SearchGender string `json:"searchGender"`
 	LookingFor   string `json:"lookingFor"`
 	Distance     string `json:"distance"`
+	Latitude     string `json:"latitude"`
+	Longitude    string `json:"longitude"`
 }
 
 type QueryParamsGetProfileByTelegramID struct {
